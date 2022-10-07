@@ -1,4 +1,5 @@
 const udp = require('../../udp')
+const TelnetSocket = require('../../telnet')
 const instance_skel = require('../../instance_skel')
 
 class instance extends instance_skel {
@@ -12,21 +13,74 @@ class instance extends instance_skel {
 	 */
 	constructor(system, id, config) {
 		super(system, id, config)
+
+		this.CONFIG_MODELS = {
+			m4000: {
+				id: 'm4000',
+				label: 'Panamax M4000 Pro',
+				banks: 3,
+				protocol: 'udp',
+			},
+			sm3: {
+				id: 'sm3',
+				label: 'Panamax SM-3 Pro',
+				banks: 2,
+				protocol: 'udp',
+			},
+			bb232: {
+				id: 'bb232',
+				label: 'Furman BB-RS232',
+				banks: 0,
+				protocol: 'udp',
+			},
+			m4315: {
+				id: 'm4315',
+				label: 'Panamax M4315 Pro',
+				banks: 8,
+				protocol: 'telnet',
+			},
+		}
+		this.CONFIG_MODELS_CHOICES = Object.values(this.CONFIG_MODELS)
+		// Sort names alphabetically
+		this.CONFIG_MODELS_CHOICES.sort(function (a, b) {
+			var x = a.label.toLowerCase()
+			var y = b.label.toLowerCase()
+			if (x < y) {
+				return -1
+			}
+			if (x > y) {
+				return 1
+			}
+			return 0
+		})
+
+		if (this.config.model !== undefined) {
+			this.model = this.CONFIG_MODELS[this.config.model]
+		} else {
+			this.config.model = 'm4000'
+			this.model = this.CONFIG_MODELS['m4000']
+		}
+
 		this.actions() // export actions
 		this.init_presets() // export presets
 	}
 
 	updateConfig(config) {
-		this.init_presets()
-
-		if (this.udp !== undefined) {
-			this.udp.destroy()
-			delete this.udp
+		if (this.config.model != config.model) {
+			this.model = this.CONFIG_MODELS[config.model]
 		}
 
 		this.config = config
+		this.actions() // export actions
+		this.init_presets()
 
 		this.init()
+		this.debug('New config.', this.model)
+	}
+
+	incomingData = function (data) {
+		this.status(self.STATUS_OK)
+		this.debug('Received: ' + data.toString())
 	}
 
 	init() {
@@ -34,28 +88,67 @@ class instance extends instance_skel {
 			this.udp.destroy()
 			delete this.udp
 		}
+		if (this.telnet !== undefined) {
+			this.telnet.destroy()
+			delete self.telnet
+		}
 
 		this.status(this.STATE_WARNING, 'Connecting')
 
-		if (this.config.host !== undefined) {
-			this.udp = new udp(this.config.host, 57010)
+		if (this.config.host) {
+			if (this.model.protocol == 'udp') {
+				this.udp = new udp(this.config.host, 57010)
 
-			this.udp.on('error', (err) => {
-				this.debug('Network error', err)
-				this.status(this.STATE_ERROR, err)
-				this.log('error', 'Network error: ' + err.message)
-			})
+				this.udp.on('error', (err) => {
+					this.debug('Network error', err)
+					this.status(this.STATE_ERROR, err)
+					this.log('error', 'Network error: ' + err.message)
+				})
 
-			// If we get data, thing should be good
-			this.udp.on('data', (data, info) => {
-				this.status(this.STATE_OK)
-				console.log('Data received from client : ' + data.toString())
-				console.log('Received %d bytes from %s:%d\n', data.length, info.address, info.port)
-			})
+				// If we get data, thing should be good
+				this.udp.on('data', (data, info) => {
+					this.incomingData(data)
+				})
 
-			this.udp.on('status_change', (status, message) => {
-				this.status(status, message)
-			})
+				this.udp.on('status_change', (status, message) => {
+					this.status(status, message)
+				})
+			} else if (this.model.protocol == 'telnet') {
+				this.telnet = new TelnetSocket(this.config.host, 23)
+
+				this.telnet.on('status_change', (status, message) => {
+					if (this.status !== this.STATUS_OK) {
+						this.status(status, message)
+					}
+				})
+
+				this.telnet.on('error', (err) => {
+					this.debug('Network error', err)
+					this.log('error', 'Network error: ' + err.message)
+				})
+
+				this.telnet.on('connect', () => {
+					this.debug('Connected')
+				})
+
+				// if we get any data, display it to stdout
+				this.telnet.on('data', (buffer) => {
+					var indata = buffer.toString('utf8')
+					this.incomingData(indata)
+				})
+
+				this.telnet.on('iac', function (type, info) {
+					// tell remote we WONT do anything we're asked to DO
+					if (type == 'DO') {
+						this.telnet.write(Buffer.from([255, 252, info]))
+					}
+
+					// tell the remote DONT do whatever they WILL offer
+					if (type == 'WILL') {
+						this.telnet.write(Buffer.from([255, 254, info]))
+					}
+				})
+			}
 		}
 	}
 
@@ -75,24 +168,23 @@ class instance extends instance_skel {
 			`,
 			},
 			{
+				type: 'dropdown',
+				id: 'model',
+				label: 'Device Model',
+				required: true,
+				choices: this.CONFIG_MODELS_CHOICES,
+			},
+			{
 				type: 'textinput',
 				id: 'host',
 				label: 'Device IP',
-				width: 6,
+				required: true,
 				regex: this.REGEX_IP,
 			},
 			{
 				type: 'textinput',
 				id: 'id',
 				label: 'Device ID',
-				width: 6,
-			},
-			{
-				type: 'dropdown',
-				id: 'model',
-				label: 'Device Model',
-				default: 'm4000',
-				choices: [{ id: 'm4000', label: 'M4000 Pro' }],
 			},
 		]
 	}
@@ -101,6 +193,9 @@ class instance extends instance_skel {
 	destroy() {
 		if (this.udp !== undefined) {
 			this.udp.destroy()
+		}
+		if (this.telnet !== undefined) {
+			this.telnet.destroy()
 		}
 
 		this.debug('destroy', this.id)
@@ -112,21 +207,10 @@ class instance extends instance_skel {
 	}
 
 	actions(system) {
-		this.setActions({
-			custom: {
-				label: 'Send Custom Command',
-				options: [
-					{
-						type: 'textwithvariables',
-						id: 'id_send',
-						label: 'Command:',
-						tooltip: 'Automatically adds XML device wrapper, just the command is needed',
-						default: '',
-						width: 6,
-					},
-				],
-			},
-			cmd_power: {
+		var actions = {}
+
+		if (this.model.protocol == 'udp') {
+			actions['udp_cmd_power'] = {
 				label: 'Power Action',
 				options: [
 					{
@@ -135,7 +219,7 @@ class instance extends instance_skel {
 						label: 'Bank:',
 						default: '1',
 						min: 1,
-						max: 3,
+						max: this.model.banks,
 						step: 1,
 						required: true,
 					},
@@ -151,8 +235,8 @@ class instance extends instance_skel {
 						],
 					},
 				],
-			},
-			cmd_sequence: {
+			}
+			actions['udp_cmd_sequence'] = {
 				label: 'Sequence On/Off',
 				options: [
 					{
@@ -166,11 +250,11 @@ class instance extends instance_skel {
 						],
 					},
 				],
-			},
-			cmd_reboot: {
+			}
+			actions['udp_cmd_reboot'] = {
 				label: 'Reboot Sequencer',
-			},
-			set_delay: {
+			}
+			actions['udp_set_delay'] = {
 				label: 'Set Bank Delay',
 				options: [
 					{
@@ -179,7 +263,7 @@ class instance extends instance_skel {
 						label: 'Bank:',
 						default: '1',
 						min: 1,
-						max: 3,
+						max: this.model.banks,
 						step: 1,
 						required: true,
 					},
@@ -205,9 +289,70 @@ class instance extends instance_skel {
 						required: true,
 					},
 				],
-			},
-			set_triggerena: {
-				label: 'Enable Trigger',
+			}
+			if (this.model.id == 'm4000') {
+				actions['udp_set_triggerena'] = {
+					label: 'Enable Trigger',
+					options: [
+						{
+							type: 'number',
+							id: 'id_bank',
+							label: 'Bank:',
+							default: '1',
+							min: 1,
+							max: this.model.banks,
+							step: 1,
+							required: true,
+						},
+						{
+							type: 'dropdown',
+							id: 'id_triggerena',
+							label: 'Trigger',
+							default: '0',
+							choices: [
+								{ id: '0', label: 'Disabled' },
+								{ id: '1', label: 'Enabled' },
+							],
+						},
+					],
+				}
+				actions['udp_set_brightness'] = {
+					label: 'Set Brightness',
+					options: [
+						{
+							type: 'number',
+							label: 'Brightness',
+							id: 'id_brightness',
+							min: 1,
+							max: 5,
+							default: 1,
+							step: 1,
+							required: true,
+							range: true,
+						},
+					],
+				}
+			}
+		} else if (this.model.protocol == 'telnet') {
+			actions['telnet_cmd_trigger'] = {
+				label: 'Trigger Action',
+				options: [
+					{
+						type: 'dropdown',
+						id: 'id_trigger_option',
+						label: 'Action',
+						choices: [
+							{ id: '!GREEN_BUTTON', label: 'Green Button' },
+							{ id: '!REBOOT_1', label: 'Reboot 1' },
+							{ id: '!REBOOT_2', label: 'Reboot 2' },
+							{ id: '!ALL_OFF', label: 'All Off' },
+							{ id: '!ALL_ON', label: 'All On' },
+						],
+					},
+				],
+			}
+			actions['telnet_cmd_power'] = {
+				label: 'Bank Power Action',
 				options: [
 					{
 						type: 'number',
@@ -215,52 +360,120 @@ class instance extends instance_skel {
 						label: 'Bank:',
 						default: '1',
 						min: 1,
-						max: 3,
+						max: this.model.banks,
 						step: 1,
 						required: true,
 					},
 					{
 						type: 'dropdown',
-						id: 'id_triggerena',
-						label: 'Trigger',
-						default: '0',
+						id: 'id_power_option',
+						label: 'Action',
+						default: 'ON',
 						choices: [
-							{ id: '0', label: 'Disabled' },
-							{ id: '1', label: 'Enabled' },
+							{ id: 'ON', label: 'On' },
+							{ id: 'OFF', label: 'Off' },
 						],
 					},
 				],
-			},
-			set_brightness: {
-				label: 'Set Brightness',
+			}
+			actions['telnet_set_trigger_source'] = {
+				label: 'Set Trigger Source',
 				options: [
 					{
 						type: 'number',
-						label: 'Brightness',
-						id: 'id_brightness',
+						id: 'id_bank',
+						label: 'Bank:',
+						default: '1',
 						min: 1,
-						max: 5,
-						default: 1,
+						max: this.model.banks,
 						step: 1,
 						required: true,
-						range: true,
+					},
+					{
+						type: 'dropdown',
+						id: 'id_trigger_source',
+						label: 'Action',
+						default: 'NONE',
+						choices: [
+							{ id: 'NONE', label: 'None' },
+							{ id: 'BUTTON_1', label: 'Button 1' },
+							{ id: 'BUTTON_2', label: 'Button 2' },
+							{ id: 'BUTTON_GREEN', label: 'Green Button' },
+							{ id: 'TRIGIN', label: 'DC Trigger' },
+						],
 					},
 				],
-			},
-		})
+			}
+			actions['telnet_set_reboot_delay'] = {
+				label: 'Set Reboot Delay',
+				options: [
+					{
+						type: 'number',
+						id: 'id_delay_1',
+						label: 'Button 1 Delay',
+						default: '1',
+						min: 1,
+						max: 255,
+						step: 1,
+						required: true,
+					},
+					{
+						type: 'number',
+						id: 'id_delay_2',
+						label: 'Button 2 Delay',
+						default: '1',
+						min: 1,
+						max: 255,
+						step: 1,
+						required: true,
+					},
+				],
+			}
+			actions['telnet_set_delay'] = {
+				label: 'Set Delay',
+				options: [
+					{
+						type: 'number',
+						id: 'id_bank',
+						label: 'Bank:',
+						default: '1',
+						min: 1,
+						max: this.model.banks,
+						step: 1,
+						required: true,
+					},
+					{
+						type: 'number',
+						id: 'id_delay_on',
+						label: 'On Delay',
+						default: '1',
+						min: 1,
+						max: 255,
+						step: 1,
+						required: true,
+					},
+					{
+						type: 'number',
+						id: 'id_delay_off',
+						label: 'Off Delay',
+						default: '1',
+						min: 1,
+						max: 255,
+						step: 1,
+						required: true,
+					},
+				],
+			}
+		}
+
+		this.setActions(actions)
 	}
 
 	action(action) {
 		let cmd
 
 		switch (action.action) {
-			// Custom action
-			case 'custom':
-				this.parseVariables(action.options.id_send, cmd)
-				break
-
-			// Commands
-			case 'cmd_power':
+			case 'udp_cmd_power':
 				switch (action.options.id_power_option) {
 					case 'on':
 						cmd = `<command xid="companion"><outlet id="${action.options.id_bank}">1</outlet></command>`
@@ -273,34 +486,55 @@ class instance extends instance_skel {
 						break
 				}
 				break
-			case 'cmd_sequence':
+			case 'udp_cmd_sequence':
 				cmd = `<command xid="companion"><sequence>${action.options.id_sequencedir}</sequence></command>`
 				break
-			case 'cmd_reboot':
+			case 'udp_cmd_reboot':
 				cmd = `<command xid="companion"><reboot/></command>`
 				break
 
-			// Settings
-			case 'set_delay':
+			// UDP Settings
+			case 'udp_set_delay':
 				cmd = `<command xid="companion"><set><delay id="${action.options.id_bank}" act="${action.options.id_delay_type}">${action.options.id_delay}</delay></set></command>`
 				break
-			case 'set_triggerena':
+			case 'udp_set_triggerena':
 				cmd = `<command xid="companion"><set><triggerena id="${action.options.id_bank}">${action.options.id_triggerena}</triggerena></set></command>`
 				break
-			case 'set_brightness':
+			case 'udp_set_brightness':
 				cmd = `<command xid="companion"><set><brightness>${action.options.id_brightness}</brightness></set></command>`
+				break
+
+			// Telnet
+			case 'telnet_cmd_trigger':
+				cmd = action.options.id_trigger_option
+				break
+			case 'telnet_cmd_power':
+				cmd = `!SWITCH ${action.options.id_bank} ${action.options.id_power_option}`
+				break
+			case 'telnet_set_trigger_source':
+				cmd = `!SET_TRIGGER ${action.options.id_bank} ${action.options.id_trigger_source}`
+				break
+			case 'telnet_set_reboot_delay':
+				cmd = `!SET_REBOOT_DELAY ${action.options.id_delay_1} ${action.options.id_delay_2}`
+				break
+			case 'telnet_set_delay':
+				cmd = `!SET_DELAY ${action.options.id_bank} ${action.options.id_delay_on} ${action.options.id_delay_off}`
 				break
 		}
 		// add wrapper to command
-		cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}">${cmd}</device>`
-		let sendBuf = Buffer.from(cmd + '\n')
+		if (this.model.protocol == 'udp') {
+			cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}">${cmd}</device>`
+			let sendBuf = Buffer.from(cmd + '\n')
 
-		if (sendBuf != '') {
-			if (this.udp !== undefined) {
-				this.debug('sending', cmd, 'to', this.config.host)
-
-				this.udp.send(sendBuf)
+			if (sendBuf != '') {
+				if (this.udp !== undefined) {
+					this.debug('Sending: ', cmd, ' over ', this.model.protocol)
+					this.udp.send(sendBuf)
+				}
 			}
+		} else if (this.model.protocol == 'telnet') {
+			this.debug('Sending: ', cmd, ' over ', this.model.protocol)
+			self.socket.write(cmd + '\r')
 		}
 	}
 }
