@@ -185,6 +185,7 @@ class instance extends instance_skel {
 				type: 'textinput',
 				id: 'id',
 				label: 'Device ID',
+				regex: '/^[a-zA-Z0-9]*$/',
 			},
 		]
 	}
@@ -210,32 +211,6 @@ class instance extends instance_skel {
 		var actions = {}
 
 		if (this.model.protocol == 'udp') {
-			actions['udp_cmd_power'] = {
-				label: 'Power Action',
-				options: [
-					{
-						type: 'number',
-						id: 'id_bank',
-						label: 'Bank:',
-						default: '1',
-						min: 1,
-						max: this.model.banks,
-						step: 1,
-						required: true,
-					},
-					{
-						type: 'dropdown',
-						id: 'id_power_option',
-						label: 'Action',
-						default: 'on',
-						choices: [
-							{ id: 'on', label: 'On' },
-							{ id: 'off', label: 'Off' },
-							{ id: 'cycle', label: 'Cycle' },
-						],
-					},
-				],
-			}
 			actions['udp_cmd_sequence'] = {
 				label: 'Sequence On/Off',
 				options: [
@@ -252,43 +227,73 @@ class instance extends instance_skel {
 				],
 			}
 			actions['udp_cmd_reboot'] = {
-				label: 'Reboot Sequencer',
+				label: 'Reboot Device',
 			}
-			actions['udp_set_delay'] = {
-				label: 'Set Bank Delay',
-				options: [
-					{
-						type: 'number',
-						id: 'id_bank',
-						label: 'Bank:',
-						default: '1',
-						min: 1,
-						max: this.model.banks,
-						step: 1,
-						required: true,
-					},
-					{
-						type: 'dropdown',
-						id: 'id_delay_type',
-						label: 'Delay Setting',
-						default: '0',
-						choices: [
-							{ id: '0', label: 'Off' },
-							{ id: '1', label: 'On' },
-							{ id: '2', label: 'Power Cycle' },
-						],
-					},
-					{
-						type: 'number',
-						id: 'id_delay',
-						label: 'Delay (s)',
-						default: '1',
-						min: 0,
-						max: 65536,
-						step: 1,
-						required: true,
-					},
-				],
+			if (this.model.banks > 0) {
+				actions['udp_cmd_power'] = {
+					label: 'Power Action',
+					options: [
+						{
+							type: 'number',
+							id: 'id_bank',
+							label: 'Bank:',
+							default: '1',
+							min: 1,
+							max: this.model.banks,
+							step: 1,
+							required: true,
+						},
+						{
+							type: 'dropdown',
+							id: 'id_power_option',
+							label: 'Action',
+							default: 'on',
+							choices: [
+								{ id: 'on', label: 'On' },
+								{ id: 'off', label: 'Off' },
+								{ id: 'cycle', label: 'Cycle' },
+							],
+						},
+					],
+				}
+				actions['udp_set_delay'] = {
+					label: 'Set Bank Delay',
+					options: [
+						{
+							type: 'number',
+							id: 'id_bank',
+							label: 'Bank:',
+							default: '1',
+							min: 1,
+							max: this.model.banks,
+							step: 1,
+							required: true,
+						},
+						{
+							type: 'dropdown',
+							id: 'id_delay_type',
+							label: 'Delay Setting',
+							default: '0',
+							choices: [
+								{ id: '0', label: 'Off' },
+								{ id: '1', label: 'On' },
+								{ id: '2', label: 'Power Cycle' },
+							],
+						},
+						{
+							type: 'number',
+							id: 'id_delay',
+							label: 'Delay (s)',
+							default: '1',
+							min: 0,
+							max: 65536,
+							step: 1,
+							required: true,
+						},
+					],
+				}
+			}
+			if (this.model.id == 'bb232') {
 			}
 			if (this.model.id == 'm4000') {
 				actions['udp_set_triggerena'] = {
