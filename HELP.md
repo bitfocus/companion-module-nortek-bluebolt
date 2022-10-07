@@ -1,7 +1,18 @@
 ## Nortek Bluebolt
 
-TODO
+**Available commands for Bluebolt**
 
-**Available commands in this module**
+- Power on/off/cycle bank
+- Sequence on/off
+- Reboot
+- Set Bank Delay
+- Set Bank Trigger
+- Set Brightness
+
+**Available variables for Bluebolt**
+
+- TODO
+
+**Available feedback for Bluebolt**
 
 - TODO
