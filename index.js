@@ -20,24 +20,72 @@ class instance extends instance_skel {
 				label: 'Panamax M4000 Pro',
 				banks: 3,
 				protocol: 'udp',
+				smartlink: false,
+				deviceID: 'MAC Address',
 			},
 			sm3: {
 				id: 'sm3',
 				label: 'Panamax SM-3 Pro',
 				banks: 2,
 				protocol: 'udp',
-			},
-			bb232: {
-				id: 'bb232',
-				label: 'Furman BB-RS232',
-				banks: 0,
-				protocol: 'udp',
+				smartlink: false,
+				deviceID: 'MAC Address',
 			},
 			m4315: {
 				id: 'm4315',
 				label: 'Panamax M4315 Pro',
 				banks: 8,
 				protocol: 'telnet',
+				smartlink: false,
+				deviceID: 'N/A',
+			},
+			bb232: {
+				id: 'bb232',
+				label: 'Furman BB-RS232',
+				banks: 0,
+				protocol: 'udp',
+				smartlink: false,
+				deviceID: 'MAC Address',
+			},
+			cn1800: {
+				id: 'cn1800',
+				label: 'Furman CN-1800 S',
+				banks: 3,
+				protocol: 'udp',
+				smartlink: true,
+				deviceID: 'Serial Number',
+			},
+			cn2400: {
+				id: 'cn2400',
+				label: 'Furman CN-2400 S',
+				banks: 3,
+				protocol: 'udp',
+				smartlink: true,
+				deviceID: 'Serial Number',
+			},
+			cn3600: {
+				id: 'cn3600',
+				label: 'Furman CN-3600 SE',
+				banks: 3,
+				protocol: 'udp',
+				smartlink: true,
+				deviceID: 'Serial Number',
+			},
+			cnmp15: {
+				id: 'cnmp15',
+				label: 'Furman CN-15MP',
+				banks: 1,
+				protocol: 'udp',
+				smartlink: true,
+				deviceID: 'Serial Number',
+			},
+			cnmp20: {
+				id: 'cnmp20',
+				label: 'Furman CN-20MP',
+				banks: 1,
+				protocol: 'udp',
+				smartlink: true,
+				deviceID: 'Serial Number',
 			},
 		}
 		this.CONFIG_MODELS_CHOICES = Object.values(this.CONFIG_MODELS)
@@ -54,6 +102,22 @@ class instance extends instance_skel {
 			return 0
 		})
 
+		// Generate table of options for config page
+		this.model_table = `<style type="text/css">
+			.tg  {border-collapse:collapse;border-spacing:0;}
+			.tg td{border-color:black;border-style:solid;border-width:1px;padding:5px 5px;}
+			.tg th{text-align:center;}
+			</style>
+			`
+		this.model_table += `<table class="tg"><thead><tr><th>Model</th><th>Protocol</th><th>Device IP</th><th>Device ID</th></tr></thead><tbody>`
+		for (let modelOption of this.CONFIG_MODELS_CHOICES) {
+			this.model_table += `<tr><td>${modelOption.label}</td><td>${modelOption.protocol}</td><td>${
+				modelOption.smartlink ? 'BB-RS232 IP' : 'Device IP'
+			}</td><td>${modelOption.deviceID}</td></tr>`
+		}
+		this.model_table += `</tbody></table>`
+
+		// Set model if none set
 		if (this.config.model !== undefined) {
 			this.model = this.CONFIG_MODELS[this.config.model]
 		} else {
@@ -157,15 +221,9 @@ class instance extends instance_skel {
 		return [
 			{
 				type: 'text',
-				id: 'info',
+				id: 'table',
 				width: 12,
-				value: `
-					<div>
-						<strong>Note: Non-telnet BlueBolt devices need a device ID</strong>
-						<br>
-						For most devices, this is the MAC Address
-					</div>
-			`,
+				value: this.model_table,
 			},
 			{
 				type: 'dropdown',
