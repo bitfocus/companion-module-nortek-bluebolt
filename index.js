@@ -97,16 +97,6 @@ class instance extends instance_skel {
 		]
 	}
 
-	/*
-Model 			Device Class 	Identifier (id)
-BB-RS232 		bb232 			MAC Address
-CN-1800 S 		cn1800 			Device ID
-CN-2400 S 		cn2400 			Device ID
-CN-3600 SE 		cn3600 			Device ID
-CN-15MP 		cnmp15 			Device ID
-CN-20MP 		cnmp20 			Device ID
-*/
-
 	// When module gets deleted
 	destroy() {
 		if (this.udp !== undefined) {
