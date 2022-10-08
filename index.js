@@ -111,9 +111,9 @@ class instance extends instance_skel {
 			`
 		this.model_table += `<table class="tg"><thead><tr><th>Model</th><th>Protocol</th><th>Device IP</th><th>Device ID</th></tr></thead><tbody>`
 		for (let modelOption of this.CONFIG_MODELS_CHOICES) {
-			this.model_table += `<tr><td>${modelOption.label}</td><td>${(modelOption.smartlink) ? (modelOption.protocol + ' + SmartLink') : modelOption.protocol}</td><td>${
-				modelOption.smartlink ? 'BB-RS232 IP' : 'Device IP'
-			}</td><td>${modelOption.deviceID}</td></tr>`
+			this.model_table += `<tr><td>${modelOption.label}</td><td>${
+				modelOption.smartlink ? modelOption.protocol + ' + SmartLink' : modelOption.protocol
+			}</td><td>${modelOption.smartlink ? 'BB-RS232 IP' : 'Device IP'}</td><td>${modelOption.deviceID}</td></tr>`
 		}
 		this.model_table += `</tbody></table>`
 
@@ -288,8 +288,10 @@ class instance extends instance_skel {
 					},
 				],
 			}
-			actions['udp_cmd_reboot'] = {
-				label: 'Reboot Device',
+			if (!this.model.smartlink) {
+				actions['udp_cmd_reboot'] = {
+					label: 'Reboot Device',
+				}
 			}
 			if (this.model.banks > 0) {
 				actions['udp_cmd_power'] = {
@@ -318,45 +320,52 @@ class instance extends instance_skel {
 						},
 					],
 				}
-				actions['udp_set_delay'] = {
-					label: 'Set Bank Delay',
-					options: [
-						{
-							type: 'number',
-							id: 'id_bank',
-							label: 'Bank:',
-							default: '1',
-							min: 1,
-							max: this.model.banks,
-							step: 1,
-							required: true,
-						},
-						{
-							type: 'dropdown',
-							id: 'id_delay_type',
-							label: 'Delay Setting',
-							default: '0',
-							choices: [
-								{ id: '0', label: 'Off' },
-								{ id: '1', label: 'On' },
-								{ id: '2', label: 'Power Cycle' },
-							],
-						},
-						{
-							type: 'number',
-							id: 'id_delay',
-							label: 'Delay (s)',
-							default: '1',
-							min: 0,
-							max: 65536,
-							step: 1,
-							required: true,
-						},
-					],
+				if (!this.model.smartlink) {
+					actions['udp_set_delay'] = {
+						label: 'Set Bank Delay',
+						options: [
+							{
+								type: 'number',
+								id: 'id_bank',
+								label: 'Bank:',
+								default: '1',
+								min: 1,
+								max: this.model.banks,
+								step: 1,
+								required: true,
+							},
+							{
+								type: 'dropdown',
+								id: 'id_delay_type',
+								label: 'Delay Setting',
+								default: '0',
+								choices: [
+									{ id: '0', label: 'Off' },
+									{ id: '1', label: 'On' },
+									{ id: '2', label: 'Power Cycle' },
+								],
+							},
+							{
+								type: 'number',
+								id: 'id_delay',
+								label: 'Delay (s)',
+								default: '1',
+								min: 0,
+								max: 65536,
+								step: 1,
+								required: true,
+							},
+						],
+					}
 				}
 			}
-			if (this.smartlink) {
-				
+			if (this.model.smartlink) {
+				actions['udp_cmd_refreshinfo'] = {
+					label: 'Refresh Info',
+				}
+				actions['udp_cmd_refreshsettings'] = {
+					label: 'Refresh Setings',
+				}
 			}
 			if (this.model.id == 'bb232') {
 				actions['udp_cmd_enumerate'] = {

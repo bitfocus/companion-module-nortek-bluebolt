@@ -1,6 +1,6 @@
 {
 	"name": "nortek-bluebolt",
-	"version": "0.6.0",
+	"version": "0.7.0",
 	"api_version": "1.0.0",
 	"description": "Controls Bluebolt compatible power products from Furman and Panamax",
 	"keywords": [
