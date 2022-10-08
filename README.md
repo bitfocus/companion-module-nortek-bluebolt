@@ -19,6 +19,15 @@ Controls BlueBolt Compatible sequencers from Furman and Panamax
 - Support for Panamax SM3 Pro (beta)
 - Support for Furman BB-RS232 (beta)
 
+**V0.7.0**
+
+- Support for CN-1800 S connected via BB-RS232
+- Support for CN-2400 S connected via BB-RS232
+- Support for CN-3600 SE connected via BB-RS232
+- Support for CN-15MP connected via BB-RS232
+- Support for CN-20MP connected via BB-RS232
+- Support matrix in setup page to clarify setup
+
 **TODO**
 
 - Feedback/variables?
