@@ -111,7 +111,7 @@ class instance extends instance_skel {
 			`
 		this.model_table += `<table class="tg"><thead><tr><th>Model</th><th>Protocol</th><th>Device IP</th><th>Device ID</th></tr></thead><tbody>`
 		for (let modelOption of this.CONFIG_MODELS_CHOICES) {
-			this.model_table += `<tr><td>${modelOption.label}</td><td>${modelOption.protocol}</td><td>${
+			this.model_table += `<tr><td>${modelOption.label}</td><td>${(modelOption.smartlink) ? (modelOption.protocol + ' + SmartLink') : modelOption.protocol}</td><td>${
 				modelOption.smartlink ? 'BB-RS232 IP' : 'Device IP'
 			}</td><td>${modelOption.deviceID}</td></tr>`
 		}
@@ -223,7 +223,11 @@ class instance extends instance_skel {
 				type: 'text',
 				id: 'table',
 				width: 12,
-				value: this.model_table,
+				value: `${this.model_table}
+					<div>
+						<br>
+						Note: Each device in a SmartLink chain needs its own instance of this module!
+					</div>`,
 			},
 			{
 				type: 'dropdown',
@@ -351,7 +355,16 @@ class instance extends instance_skel {
 					],
 				}
 			}
+			if (this.smartlink) {
+				
+			}
 			if (this.model.id == 'bb232') {
+				actions['udp_cmd_enumerate'] = {
+					label: 'Enumerate',
+				}
+				actions['udp_cmd_rollcall'] = {
+					label: 'Roll Call',
+				}
 			}
 			if (this.model.id == 'm4000') {
 				actions['udp_set_triggerena'] = {
@@ -554,6 +567,12 @@ class instance extends instance_skel {
 				break
 			case 'udp_cmd_reboot':
 				cmd = `<command xid="companion"><reboot/></command>`
+				break
+			case 'udp_cmd_enumerate':
+				cmd = '<enumerate/>'
+				break
+			case 'udp_cmd_rollcall':
+				cmd = '<rollcall/>'
 				break
 
 			// UDP Settings
