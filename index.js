@@ -143,7 +143,7 @@ class instance extends instance_skel {
 	}
 
 	incomingData = function (data) {
-		this.status(self.STATUS_OK)
+		this.status(this.STATUS_OK)
 		this.debug('Received: ' + data.toString())
 	}
 
@@ -154,7 +154,7 @@ class instance extends instance_skel {
 		}
 		if (this.telnet !== undefined) {
 			this.telnet.destroy()
-			delete self.telnet
+			delete this.telnet
 		}
 
 		this.status(this.STATE_WARNING, 'Connecting')
@@ -625,7 +625,7 @@ class instance extends instance_skel {
 			}
 		} else if (this.model.protocol == 'telnet') {
 			this.debug('Sending: ', cmd, ' over ', this.model.protocol)
-			self.socket.write(cmd + '\r')
+			this.telnet.write(cmd + '\r')
 		}
 	}
 }
