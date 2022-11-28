@@ -1,18 +1,6 @@
 {
 	"name": "nortek-bluebolt",
-	"version": "0.7.0",
-	"api_version": "1.0.0",
-	"description": "Controls Bluebolt compatible power products from Furman and Panamax",
-	"keywords": [
-		"Furman",
-		"Panamax",
-		"Nortek",
-		"Bluebolt"
-	],
-	"manufacturer": "Nortek",
-	"product": "Bluebolt",
-	"shortname": "bluebolt",
-	"homepage": "https://github.com/bitfocus/companion-module-nortek-bluebolt#readme",
+	"version": "1.0.0",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
@@ -22,7 +10,6 @@
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-nortek-bluebolt.git"
 	},
-	"author": "Elliot Matson <ematson5897@gmail.com>",
 	"contributors": [
 		"Elliot Matson <ematson5897@gmail.com>"
 	],
@@ -31,6 +18,10 @@
 		"url": "https://github.com/bitfocus/companion-module-nortek-bluebolt/issues"
 	},
 	"devDependencies": {
+		"@companion-module/tools": "^0.5.0",
 		"prettier": "^2.7.1"
+	},
+	"dependencies": {
+		"@companion-module/base": "~1.0"
 	}
 }
