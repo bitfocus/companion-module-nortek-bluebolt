@@ -22,6 +22,6 @@
 		"prettier": "^2.7.1"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.0"
+		"@companion-module/base": "~0.6.1"
 	}
 }

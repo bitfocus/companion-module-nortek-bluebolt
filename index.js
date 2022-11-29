@@ -1,18 +1,8 @@
-const udp = require('../../udp')
-const TelnetSocket = require('../../telnet')
-const instance_skel = require('../../instance_skel')
+const { InstanceBase, Regex, runEntrypoint, UDPHelper, TelnetHelper } = require('@companion-module/base')
 
-class instance extends instance_skel {
-	/**
-	 * Create an instance of the module
-	 *
-	 * @param {EventEmitter} system - the brains of the operation
-	 * @param {string} id - the instance ID
-	 * @param {Object} config - saved user configuration parameters
-	 * @since 1.0.0
-	 */
-	constructor(system, id, config) {
-		super(system, id, config)
+class BlueBoltInstance extends InstanceBase {
+	constructor(internal) {
+		super(internal)
 
 		this.CONFIG_MODELS = {
 			m4000: {
@@ -101,104 +91,48 @@ class instance extends instance_skel {
 			}
 			return 0
 		})
-
-		// Generate table of options for config page
-		this.model_table = `<style type="text/css">
-			.tg  {border-collapse:collapse;border-spacing:0;}
-			.tg td{border-color:black;border-style:solid;border-width:1px;padding:5px 5px;}
-			.tg th{text-align:center;}
-			</style>
-			`
-		this.model_table += `<table class="tg"><thead><tr><th>Model</th><th>Protocol</th><th>Device IP</th><th>Device ID</th></tr></thead><tbody>`
-		for (let modelOption of this.CONFIG_MODELS_CHOICES) {
-			this.model_table += `<tr><td>${modelOption.label}</td><td>${
-				modelOption.smartlink ? modelOption.protocol + ' + SmartLink' : modelOption.protocol
-			}</td><td>${modelOption.smartlink ? 'BB-RS232 IP' : 'Device IP'}</td><td>${modelOption.deviceID}</td></tr>`
-		}
-		this.model_table += `</tbody></table>`
-
-		// Set model if none set
-		if (this.config.model !== undefined) {
-			this.model = this.CONFIG_MODELS[this.config.model]
-		} else {
-			this.config.model = 'm4000'
-			this.model = this.CONFIG_MODELS['m4000']
-		}
-
-		this.actions() // export actions
-		this.init_presets() // export presets
 	}
 
-	updateConfig(config) {
-		if (this.config.model != config.model) {
-			this.model = this.CONFIG_MODELS[config.model]
-		}
-
+	async init(config) {
 		this.config = config
-		this.actions() // export actions
-		this.init_presets()
 
-		this.init()
-		this.debug('New config.', this.model)
-	}
-
-	incomingData = function (data) {
-		this.status(this.STATUS_OK)
-		this.debug('Received: ' + data.toString())
-	}
-
-	init() {
-		if (this.udp !== undefined) {
-			this.udp.destroy()
-			delete this.udp
+		if (!this.config.model) {
+			this.config.model = 'm4000'
 		}
-		if (this.telnet !== undefined) {
-			this.telnet.destroy()
-			delete this.telnet
-		}
+		this.model = this.CONFIG_MODELS[this.config.model]
 
-		this.status(this.STATE_WARNING, 'Connecting')
+		this.updateStatus('connecting')
 
 		if (this.config.host) {
 			if (this.model.protocol == 'udp') {
-				this.udp = new udp(this.config.host, 57010)
+				this.udp = new UDPHelper(this.config.host, 57010)
 
 				this.udp.on('error', (err) => {
-					this.debug('Network error', err)
-					this.status(this.STATE_ERROR, err)
 					this.log('error', 'Network error: ' + err.message)
+				})
+
+				this.udp.on('status_change', (status) => {
+					this.updateStatus(status)
 				})
 
 				// If we get data, thing should be good
-				this.udp.on('data', (data, info) => {
+				this.udp.on('data', (data) => {
 					this.incomingData(data)
 				})
-
-				this.udp.on('status_change', (status, message) => {
-					this.status(status, message)
-				})
 			} else if (this.model.protocol == 'telnet') {
-				this.telnet = new TelnetSocket(this.config.host, 23)
-
-				this.telnet.on('status_change', (status, message) => {
-					if (this.status !== this.STATUS_OK) {
-						this.status(status, message)
-					}
-				})
+				this.telnet = new TelnetHelper(this.config.host, 23)
 
 				this.telnet.on('error', (err) => {
-					this.debug('Network error', err)
 					this.log('error', 'Network error: ' + err.message)
 				})
 
-				this.telnet.on('connect', () => {
-					this.debug('Connected')
+				this.telnet.on('status_change', (status) => {
+					this.updateStatus(status)
 				})
 
 				// if we get any data, display it to stdout
-				this.telnet.on('data', (buffer) => {
-					var indata = buffer.toString('utf8')
-					this.incomingData(indata)
+				this.telnet.on('data', (data) => {
+					this.incomingData(data)
 				})
 
 				this.telnet.on('iac', function (type, info) {
@@ -212,15 +146,60 @@ class instance extends instance_skel {
 						this.telnet.write(Buffer.from([255, 254, info]))
 					}
 				})
+			} else {
+				this.updateStatus('bad_config')
 			}
+		} else {
+			this.updateStatus('bad_config')
 		}
+		this.updateActions()
+	}
+
+	// When module gets deleted
+	async destroy() {
+		if (this.udp) {
+			this.udp.destroy()
+			delete this.udp
+		}
+		if (this.telnet) {
+			this.telnet.destroy()
+			delete this.telnet
+		}
+		this.log('info', 'destroy' + this.id)
+	}
+
+	async configUpdated(config) {
+		if (this.udp) {
+			this.udp.destroy()
+			delete this.udps
+		}
+		if (this.telnet) {
+			this.telnet.destroy()
+			delete this.telnet
+		}
+
+		if (this.config.model != config.model) {
+			this.model = this.CONFIG_MODELS[config.model]
+		}
+
+		this.init()
+		this.log('info', 'New config.' + config.model)
 	}
 
 	// Return config fields for web config
-	config_fields() {
+	getConfigFields() {
+		// Generate table of options for config page
+		this.model_table = `<table class="tg"><thead><tr><th>Model</th><th>Protocol</th><th>Device IP</th><th>Device ID</th></tr></thead><tbody>`
+		for (let modelOption of this.CONFIG_MODELS_CHOICES) {
+			this.model_table += `<tr><td>${modelOption.label}</td><td>${
+				modelOption.smartlink ? modelOption.protocol + ' + SmartLink' : modelOption.protocol
+			}</td><td>${modelOption.smartlink ? 'BB-RS232 IP' : 'Device IP'}</td><td>${modelOption.deviceID}</td></tr>`
+		}
+		this.model_table += `</tbody></table>`
+
 		return [
 			{
-				type: 'text',
+				type: 'static-text',
 				id: 'table',
 				width: 12,
 				value: `${this.model_table}
@@ -252,29 +231,26 @@ class instance extends instance_skel {
 		]
 	}
 
-	// When module gets deleted
-	destroy() {
-		if (this.udp !== undefined) {
-			this.udp.destroy()
-		}
-		if (this.telnet !== undefined) {
-			this.telnet.destroy()
-		}
-
-		this.debug('destroy', this.id)
+	incomingData = function (data) {
+		this.log('debug', 'Received: ' + data.toString())
 	}
 
-	init_presets() {
-		let presets = []
-		this.setPresetDefinitions(presets)
-	}
+	updateActions() {
+		const sendBlueBolt = (cmd) => {
+			if (this.model.protocol == 'udp') {
+				cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}">${cmd}</device>`
+				this.udp.send(cmd + '\n')
+			} else if (this.model.protocol == 'telnet') {
+				this.telnet.write(cmd + '\r')
+			}
+			this.log('debug', 'Sent: ' + cmd + ' over ' + this.model.protocol)
+		}
 
-	actions(system) {
 		var actions = {}
 
 		if (this.model.protocol == 'udp') {
 			actions['udp_cmd_sequence'] = {
-				label: 'Sequence On/Off',
+				name: 'Sequence On/Off',
 				options: [
 					{
 						type: 'dropdown',
@@ -287,15 +263,24 @@ class instance extends instance_skel {
 						],
 					},
 				],
+				callback: async (event) => {
+					const opt = await event.options
+					sendBlueBolt(`<command xid="companion"><sequence>${opt.id_sequencedir}</sequence></command>`)
+				},
 			}
 			if (!this.model.smartlink) {
 				actions['udp_cmd_reboot'] = {
-					label: 'Reboot Device',
+					name: 'Reboot Device',
+					options: [],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(`<command xid="companion"><reboot/></command>`)
+					},
 				}
 			}
 			if (this.model.banks > 0) {
 				actions['udp_cmd_power'] = {
-					label: 'Power Action',
+					name: 'Power Action',
 					options: [
 						{
 							type: 'number',
@@ -319,10 +304,24 @@ class instance extends instance_skel {
 							],
 						},
 					],
+					callback: async (event) => {
+						const opt = await event.options
+						switch (opt.id_power_option) {
+							case 'on':
+								sendBlueBolt(`<command xid="companion"><outlet id="${opt.id_bank}">1</outlet></command>`)
+								break
+							case 'off':
+								sendBlueBolt(`<command xid="companion"><outlet id="${opt.id_bank}">0</outlet></command>`)
+								break
+							case 'cycle':
+								sendBlueBolt(`<command xid="companion"><cycleoutlet id="${opt.id_bank}"/></command>`)
+								break
+						}
+					},
 				}
 				if (!this.model.smartlink) {
 					actions['udp_set_delay'] = {
-						label: 'Set Bank Delay',
+						name: 'Set Bank Delay',
 						options: [
 							{
 								type: 'number',
@@ -356,28 +355,54 @@ class instance extends instance_skel {
 								required: true,
 							},
 						],
+						callback: async (event) => {
+							const opt = await event.options
+							sendBlueBolt(
+								`<command xid="companion"><set><delay id="${opt.id_bank}" act="${opt.id_delay_type}">${opt.id_delay}</delay></set></command>`
+							)
+						},
 					}
 				}
 			}
 			if (this.model.smartlink) {
 				actions['udp_cmd_refreshinfo'] = {
-					label: 'Refresh Info',
+					name: 'Refresh Info',
+					options: [],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(`<refreshinfo/>`)
+					},
 				}
 				actions['udp_cmd_refreshsettings'] = {
-					label: 'Refresh Setings',
+					name: 'Refresh Settings',
+					options: [],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(`<refreshsettings/>`)
+					},
 				}
 			}
 			if (this.model.id == 'bb232') {
 				actions['udp_cmd_enumerate'] = {
-					label: 'Enumerate',
+					name: 'Enumerate',
+					options: [],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(`<enumerate/>`)
+					},
 				}
 				actions['udp_cmd_rollcall'] = {
-					label: 'Roll Call',
+					name: 'Roll Call',
+					options: [],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(`<rollcall/>`)
+					},
 				}
 			}
 			if (this.model.id == 'm4000') {
 				actions['udp_set_triggerena'] = {
-					label: 'Enable Trigger',
+					name: 'Enable Trigger',
 					options: [
 						{
 							type: 'number',
@@ -400,9 +425,15 @@ class instance extends instance_skel {
 							],
 						},
 					],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(
+							`<command xid="companion"><set><triggerena id="${opt.id_bank}">${opt.id_triggerena}</triggerena></set></command>`
+						)
+					},
 				}
 				actions['udp_set_brightness'] = {
-					label: 'Set Brightness',
+					name: 'Set Brightness',
 					options: [
 						{
 							type: 'number',
@@ -416,11 +447,15 @@ class instance extends instance_skel {
 							range: true,
 						},
 					],
+					callback: async (event) => {
+						const opt = await event.options
+						sendBlueBolt(`<command xid="companion"><set><brightness>${opt.id_brightness}</brightness></set></command>`)
+					},
 				}
 			}
 		} else if (this.model.protocol == 'telnet') {
 			actions['telnet_cmd_trigger'] = {
-				label: 'Trigger Action',
+				name: 'Trigger Action',
 				options: [
 					{
 						type: 'dropdown',
@@ -435,9 +470,13 @@ class instance extends instance_skel {
 						],
 					},
 				],
+				callback: async (event) => {
+					const opt = await event.options
+					sendBlueBolt(opt.id_trigger_option)
+				},
 			}
 			actions['telnet_cmd_power'] = {
-				label: 'Bank Power Action',
+				name: 'Bank Power Action',
 				options: [
 					{
 						type: 'number',
@@ -460,9 +499,13 @@ class instance extends instance_skel {
 						],
 					},
 				],
+				callback: async (event) => {
+					const opt = await event.options
+					sendBlueBolt(`!SWITCH ${opt.id_bank} ${opt.id_power_option}`)
+				},
 			}
 			actions['telnet_set_trigger_source'] = {
-				label: 'Set Trigger Source',
+				name: 'Set Trigger Source',
 				options: [
 					{
 						type: 'number',
@@ -488,9 +531,13 @@ class instance extends instance_skel {
 						],
 					},
 				],
+				callback: async (event) => {
+					const opt = await event.options
+					sendBlueBolt(`!SET_TRIGGER ${opt.id_bank} ${opt.id_trigger_source}`)
+				},
 			}
 			actions['telnet_set_reboot_delay'] = {
-				label: 'Set Reboot Delay',
+				name: 'Set Reboot Delay',
 				options: [
 					{
 						type: 'number',
@@ -513,9 +560,13 @@ class instance extends instance_skel {
 						required: true,
 					},
 				],
+				callback: async (event) => {
+					const opt = await event.options
+					sendBlueBolt(`!SET_REBOOT_DELAY ${opt.id_delay_1} ${opt.id_delay_2}`)
+				},
 			}
 			actions['telnet_set_delay'] = {
-				label: 'Set Delay',
+				name: 'Set Delay',
 				options: [
 					{
 						type: 'number',
@@ -548,85 +599,14 @@ class instance extends instance_skel {
 						required: true,
 					},
 				],
+				callback: async (event) => {
+					const opt = await event.options
+					sendBlueBolt(`!SET_DELAY ${opt.id_bank} ${opt.id_delay_on} ${opt.id_delay_off}`)
+				},
 			}
 		}
 
-		this.setActions(actions)
-	}
-
-	action(action) {
-		let cmd
-
-		switch (action.action) {
-			case 'udp_cmd_power':
-				switch (action.options.id_power_option) {
-					case 'on':
-						cmd = `<command xid="companion"><outlet id="${action.options.id_bank}">1</outlet></command>`
-						break
-					case 'off':
-						cmd = `<command xid="companion"><outlet id="${action.options.id_bank}">0</outlet></command>`
-						break
-					case 'cycle':
-						cmd = `<command xid="companion"><cycleoutlet id="${action.options.id_bank}"/></command>`
-						break
-				}
-				break
-			case 'udp_cmd_sequence':
-				cmd = `<command xid="companion"><sequence>${action.options.id_sequencedir}</sequence></command>`
-				break
-			case 'udp_cmd_reboot':
-				cmd = `<command xid="companion"><reboot/></command>`
-				break
-			case 'udp_cmd_enumerate':
-				cmd = '<enumerate/>'
-				break
-			case 'udp_cmd_rollcall':
-				cmd = '<rollcall/>'
-				break
-
-			// UDP Settings
-			case 'udp_set_delay':
-				cmd = `<command xid="companion"><set><delay id="${action.options.id_bank}" act="${action.options.id_delay_type}">${action.options.id_delay}</delay></set></command>`
-				break
-			case 'udp_set_triggerena':
-				cmd = `<command xid="companion"><set><triggerena id="${action.options.id_bank}">${action.options.id_triggerena}</triggerena></set></command>`
-				break
-			case 'udp_set_brightness':
-				cmd = `<command xid="companion"><set><brightness>${action.options.id_brightness}</brightness></set></command>`
-				break
-
-			// Telnet
-			case 'telnet_cmd_trigger':
-				cmd = action.options.id_trigger_option
-				break
-			case 'telnet_cmd_power':
-				cmd = `!SWITCH ${action.options.id_bank} ${action.options.id_power_option}`
-				break
-			case 'telnet_set_trigger_source':
-				cmd = `!SET_TRIGGER ${action.options.id_bank} ${action.options.id_trigger_source}`
-				break
-			case 'telnet_set_reboot_delay':
-				cmd = `!SET_REBOOT_DELAY ${action.options.id_delay_1} ${action.options.id_delay_2}`
-				break
-			case 'telnet_set_delay':
-				cmd = `!SET_DELAY ${action.options.id_bank} ${action.options.id_delay_on} ${action.options.id_delay_off}`
-				break
-		}
-		// add wrapper to command
-		if (this.model.protocol == 'udp') {
-			cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}">${cmd}</device>`
-			let sendBuf = Buffer.from(cmd + '\n')
-
-			if (sendBuf != '') {
-				if (this.udp !== undefined) {
-					this.debug('Sending: ', cmd, ' over ', this.model.protocol)
-					this.udp.send(sendBuf)
-				}
-			}
-		} else if (this.model.protocol == 'telnet') {
-			this.debug('Sending: ', cmd, ' over ', this.model.protocol)
-			this.telnet.write(cmd + '\r')
-		}
+		this.setActionDefinitions(actions)
 	}
 }
-exports = module.exports = instance
+runEntrypoint(BlueBoltInstance, [])

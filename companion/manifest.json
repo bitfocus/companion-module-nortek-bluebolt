@@ -11,10 +11,6 @@
 		{
 			"name": "Elliot Matson",
 			"email": "ematson5897@gmail.com"
-		},
-		{
-			"name": "Elliot Matson",
-			"email": "ematson5897@gmail.com"
 		}
 	],
 	"legacyIds": [],
@@ -25,13 +21,6 @@
 		"entrypoint": "../index.js"
 	},
 	"manufacturer": "Nortek",
-	"products": [
-		"Bluebolt"
-	],
-	"keywords": [
-		"Furman",
-		"Panamax",
-		"Nortek",
-		"Bluebolt"
-	]
+	"products": ["Bluebolt"],
+	"keywords": ["Furman", "Panamax", "Nortek", "Bluebolt"]
 }
