@@ -4,6 +4,10 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 Controls BlueBolt Compatible sequencers from Furman and Panamax
 
+**V1.0.0**
+
+- Companion 3 Support
+
 **V0.5.0**
 
 - Support for Panamax M4000 Pro
