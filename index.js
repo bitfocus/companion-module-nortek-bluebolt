@@ -220,7 +220,7 @@ class BlueBoltInstance extends InstanceBase {
 				id: 'host',
 				label: 'Device IP',
 				required: true,
-				regex: this.REGEX_IP,
+				regex: Regex.IP,
 			},
 			{
 				type: 'textinput',
