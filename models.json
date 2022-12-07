@@ -1,0 +1,74 @@
+{
+    "m4000": {
+        "id": "m4000",
+        "label": "Panamax M4000 Pro",
+        "banks": 3,
+        "protocol": "udp",
+        "smartlink": false,
+        "deviceID": "MAC Address"
+    },
+    "sm3": {
+        "id": "sm3",
+        "label": "Panamax SM-3 Pro",
+        "banks": 2,
+        "protocol": "udp",
+        "smartlink": false,
+        "deviceID": "MAC Address"
+    },
+    "m4315": {
+        "id": "m4315",
+        "label": "Panamax M4315 Pro",
+        "banks": 8,
+        "protocol": "telnet",
+        "smartlink": false,
+        "deviceID": "N/A"
+    },
+    "bb232": {
+        "id": "bb232",
+        "label": "Furman BB-RS232",
+        "banks": 0,
+        "protocol": "udp",
+        "smartlink": false,
+        "deviceID": "MAC Address"
+    },
+    "cn1800": {
+        "id": "cn1800",
+        "label": "Furman CN-1800 S",
+        "banks": 3,
+        "protocol": "udp",
+        "smartlink": true,
+        "deviceID": "Serial Number"
+    },
+    "cn2400": {
+        "id": "cn2400",
+        "label": "Furman CN-2400 S",
+        "banks": 3,
+        "protocol": "udp",
+        "smartlink": true,
+        "deviceID": "Serial Number"
+    },
+    "cn3600": {
+        "id": "cn3600",
+        "label": "Furman CN-3600 SE",
+        "banks": 3,
+        "protocol": "udp",
+        "smartlink": true,
+        "deviceID": "Serial Number"
+    },
+    "cnmp15": {
+        "id": "cnmp15",
+        "label": "Furman CN-15MP",
+        "banks": 1,
+        "protocol": "udp",
+        "smartlink": true,
+        "deviceID": "Serial Number"
+    },
+    "cnmp20": {
+        "id": "cnmp20",
+        "label": "Furman CN-20MP",
+        "banks": 1,
+        "protocol": "udp",
+        "smartlink": true,
+        "deviceID": "Serial Number"
+    }
+}
