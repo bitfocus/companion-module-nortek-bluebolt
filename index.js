@@ -106,7 +106,6 @@ class BlueBoltInstance extends InstanceBase {
 		if (this.config.host) {
 			if (this.model.protocol == 'udp') {
 				this.udp = new UDPHelper(this.config.host, 57010)
-
 				this.udp.on('error', (err) => {
 					this.log('error', 'Network error: ' + err.message)
 				})
@@ -273,7 +272,6 @@ class BlueBoltInstance extends InstanceBase {
 					name: 'Reboot Device',
 					options: [],
 					callback: async (event) => {
-						const opt = await event.options
 						sendBlueBolt(`<command xid="companion"><reboot/></command>`)
 					},
 				}
@@ -369,7 +367,6 @@ class BlueBoltInstance extends InstanceBase {
 					name: 'Refresh Info',
 					options: [],
 					callback: async (event) => {
-						const opt = await event.options
 						sendBlueBolt(`<refreshinfo/>`)
 					},
 				}
@@ -377,7 +374,6 @@ class BlueBoltInstance extends InstanceBase {
 					name: 'Refresh Settings',
 					options: [],
 					callback: async (event) => {
-						const opt = await event.options
 						sendBlueBolt(`<refreshsettings/>`)
 					},
 				}
@@ -387,7 +383,6 @@ class BlueBoltInstance extends InstanceBase {
 					name: 'Enumerate',
 					options: [],
 					callback: async (event) => {
-						const opt = await event.options
 						sendBlueBolt(`<enumerate/>`)
 					},
 				}
@@ -395,7 +390,6 @@ class BlueBoltInstance extends InstanceBase {
 					name: 'Roll Call',
 					options: [],
 					callback: async (event) => {
-						const opt = await event.options
 						sendBlueBolt(`<rollcall/>`)
 					},
 				}
