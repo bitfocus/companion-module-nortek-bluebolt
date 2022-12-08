@@ -1,14 +1,4 @@
 exports.updateActions = function () {
-    const sendBlueBolt = (cmd) => {
-        if (this.model.protocol == 'udp') {
-            cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}">${cmd}</device>`
-            this.udp.send(cmd + '\n')
-        } else if (this.model.protocol == 'telnet') {
-            this.telnet.write(cmd + '\r')
-        }
-        this.log('debug', 'Sent: ' + cmd + ' over ' + this.model.protocol)
-    }
-
     var actions = {}
 
     if (this.model.protocol == 'udp') {
@@ -28,7 +18,7 @@ exports.updateActions = function () {
             ],
             callback: async (event) => {
                 const opt = await event.options
-                sendBlueBolt(`<command xid="companion"><sequence>${opt.id_sequencedir}</sequence></command>`)
+                this.sendBlueBolt(`<sequence>${opt.id_sequencedir}</sequence>`)
             },
         }
         if (!this.model.smartlink) {
@@ -36,7 +26,7 @@ exports.updateActions = function () {
                 name: 'Reboot Device',
                 options: [],
                 callback: async (event) => {
-                    sendBlueBolt(`<command xid="companion"><reboot/></command>`)
+                    this.sendBlueBolt(`<reboot/>`)
                 },
             }
         }
@@ -70,13 +60,13 @@ exports.updateActions = function () {
                     const opt = await event.options
                     switch (opt.id_power_option) {
                         case 'on':
-                            sendBlueBolt(`<command xid="companion"><outlet id="${opt.id_bank}">1</outlet></command>`)
+                            this.sendBlueBolt(`<outlet id="${opt.id_bank}">1</outlet>`)
                             break
                         case 'off':
-                            sendBlueBolt(`<command xid="companion"><outlet id="${opt.id_bank}">0</outlet></command>`)
+                            this.sendBlueBolt(`<outlet id="${opt.id_bank}">0</outlet>`)
                             break
                         case 'cycle':
-                            sendBlueBolt(`<command xid="companion"><cycleoutlet id="${opt.id_bank}"/></command>`)
+                            this.sendBlueBolt(`<cycleoutlet id="${opt.id_bank}"/>`)
                             break
                     }
                 },
@@ -119,8 +109,8 @@ exports.updateActions = function () {
                     ],
                     callback: async (event) => {
                         const opt = await event.options
-                        sendBlueBolt(
-                            `<command xid="companion"><set><delay id="${opt.id_bank}" act="${opt.id_delay_type}">${opt.id_delay}</delay></set></command>`
+                        this.sendBlueBolt(
+                            `<set><delay id="${opt.id_bank}" act="${opt.id_delay_type}">${opt.id_delay}</delay></set>`
                         )
                     },
                 }
@@ -131,14 +121,14 @@ exports.updateActions = function () {
                 name: 'Refresh Info',
                 options: [],
                 callback: async (event) => {
-                    sendBlueBolt(`<refreshinfo/>`)
+                    this.sendBlueBolt(`<refreshinfo/>`)
                 },
             }
             actions['udp_cmd_refreshsettings'] = {
                 name: 'Refresh Settings',
                 options: [],
                 callback: async (event) => {
-                    sendBlueBolt(`<refreshsettings/>`)
+                    this.sendBlueBolt(`<refreshsettings/>`)
                 },
             }
         }
@@ -147,14 +137,14 @@ exports.updateActions = function () {
                 name: 'Enumerate',
                 options: [],
                 callback: async (event) => {
-                    sendBlueBolt(`<enumerate/>`)
+                    this.sendBlueBolt(`<enumerate/>`)
                 },
             }
             actions['udp_cmd_rollcall'] = {
                 name: 'Roll Call',
                 options: [],
                 callback: async (event) => {
-                    sendBlueBolt(`<rollcall/>`)
+                    this.sendBlueBolt(`<rollcall/>`)
                 },
             }
         }
@@ -185,8 +175,8 @@ exports.updateActions = function () {
                 ],
                 callback: async (event) => {
                     const opt = await event.options
-                    sendBlueBolt(
-                        `<command xid="companion"><set><triggerena id="${opt.id_bank}">${opt.id_triggerena}</triggerena></set></command>`
+                    this.sendBlueBolt(
+                        `<set><triggerena id="${opt.id_bank}">${opt.id_triggerena}</triggerena></set>`
                     )
                 },
             }
@@ -207,7 +197,7 @@ exports.updateActions = function () {
                 ],
                 callback: async (event) => {
                     const opt = await event.options
-                    sendBlueBolt(`<command xid="companion"><set><brightness>${opt.id_brightness}</brightness></set></command>`)
+                    this.sendBlueBolt(`<set><brightness>${opt.id_brightness}</brightness></set>`)
                 },
             }
         }
@@ -230,7 +220,7 @@ exports.updateActions = function () {
             ],
             callback: async (event) => {
                 const opt = await event.options
-                sendBlueBolt(opt.id_trigger_option)
+                this.sendBlueBolt(opt.id_trigger_option)
             },
         }
         actions['telnet_cmd_power'] = {
@@ -259,7 +249,7 @@ exports.updateActions = function () {
             ],
             callback: async (event) => {
                 const opt = await event.options
-                sendBlueBolt(`!SWITCH ${opt.id_bank} ${opt.id_power_option}`)
+                this.sendBlueBolt(`!SWITCH ${opt.id_bank} ${opt.id_power_option}`)
             },
         }
         actions['telnet_set_trigger_source'] = {
@@ -291,7 +281,7 @@ exports.updateActions = function () {
             ],
             callback: async (event) => {
                 const opt = await event.options
-                sendBlueBolt(`!SET_TRIGGER ${opt.id_bank} ${opt.id_trigger_source}`)
+                this.sendBlueBolt(`!SET_TRIGGER ${opt.id_bank} ${opt.id_trigger_source}`)
             },
         }
         actions['telnet_set_reboot_delay'] = {
@@ -320,7 +310,7 @@ exports.updateActions = function () {
             ],
             callback: async (event) => {
                 const opt = await event.options
-                sendBlueBolt(`!SET_REBOOT_DELAY ${opt.id_delay_1} ${opt.id_delay_2}`)
+                this.sendBlueBolt(`!SET_REBOOT_DELAY ${opt.id_delay_1} ${opt.id_delay_2}`)
             },
         }
         actions['telnet_set_delay'] = {
@@ -359,7 +349,7 @@ exports.updateActions = function () {
             ],
             callback: async (event) => {
                 const opt = await event.options
-                sendBlueBolt(`!SET_DELAY ${opt.id_bank} ${opt.id_delay_on} ${opt.id_delay_off}`)
+                this.sendBlueBolt(`!SET_DELAY ${opt.id_bank} ${opt.id_delay_on} ${opt.id_delay_off}`)
             },
         }
     }

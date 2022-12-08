@@ -1,4 +1,5 @@
 const { InstanceBase, Regex, runEntrypoint, UDPHelper, TelnetHelper } = require('@companion-module/base')
+const { parseString } = require('xml2js')
 const actions = require('./actions')
 const models = require('./models.json')
 
@@ -20,6 +21,9 @@ class BlueBoltInstance extends InstanceBase {
 		if (this.telnet) {
 			this.telnet.destroy()
 			delete this.telnet
+		}
+		if (this.pollTimer) {
+			clearInterval(this.pollTimer)
 		}
 
 		this.config = config
@@ -44,8 +48,9 @@ class BlueBoltInstance extends InstanceBase {
 
 				// If we get data, thing should be good
 				this.udp.on('data', (data) => {
-					this.incomingData(data)
+					this.incomingDataUDP(data)
 				})
+				this.pollTimer = setInterval(this.poll.bind(this), this.config.pollingInterval)
 			} else if (this.model.protocol == 'telnet') {
 				this.telnet = new TelnetHelper(this.config.host, 23)
 
@@ -57,9 +62,9 @@ class BlueBoltInstance extends InstanceBase {
 					this.updateStatus(status)
 				})
 
-				// if we get any data, display it to stdout
+				// not yet supported
 				this.telnet.on('data', (data) => {
-					this.incomingData(data)
+					//this.incomingData(data)
 				})
 
 				this.telnet.on('iac', function (type, info) {
@@ -91,6 +96,10 @@ class BlueBoltInstance extends InstanceBase {
 		if (this.telnet) {
 			this.telnet.destroy()
 			delete this.telnet
+		}
+		if (this.pollTimer) {
+			clearInterval(this.pollTimer)
+			delete this.pollTimer
 		}
 		this.log('info', 'destroy' + this.id)
 	}
@@ -126,6 +135,7 @@ class BlueBoltInstance extends InstanceBase {
 				type: 'dropdown',
 				id: 'model',
 				label: 'Device Model',
+				width: 6,
 				required: true,
 				choices: Object.values(models),
 			},
@@ -133,6 +143,7 @@ class BlueBoltInstance extends InstanceBase {
 				type: 'textinput',
 				id: 'host',
 				label: 'Device IP',
+				width: 6,
 				required: true,
 				regex: Regex.IP,
 			},
@@ -140,13 +151,62 @@ class BlueBoltInstance extends InstanceBase {
 				type: 'textinput',
 				id: 'id',
 				label: 'Device ID',
+				width: 6,
 				regex: '/^[a-zA-Z0-9]*$/',
+			},
+			{
+				type: 'number',
+				id: 'pollingInterval',
+				label: 'Polling Interval (in ms)',
+				width: 6,
+				min: 100,
+				max: 10000,
+				default: 500,
+				required: true,
 			},
 		]
 	}
 
-	incomingData = function (data) {
-		this.log('debug', 'Received: ' + data.toString())
+	incomingDataUDP(data) {
+		//this.log('debug', 'Received: ' + data.toString())
+		parseString(data, (err, result) => {
+			if (result.device.ack[0].$.xid){
+				var callback = result.device.ack[0].$.xid
+				this.log('debug', "callback provided: " + callback)
+				if (callback === "pollCallback") {
+					this.pollCallback(result)
+				}
+			}
+		})
 	}
+	
+	poll() {
+		if (this.model.protocol == 'udp') {
+            this.sendBlueBolt('<sendstatus/>', 'pollCallback')
+        } else if (this.model.protocol == 'telnet') {
+            
+        }
+	}
+
+	pollCallback(data) {
+		this.log('debug', data.device.status[0].voltage[0])
+	}
+
+	sendBlueBolt(cmd, cmdID) {
+        if (this.model.protocol == 'udp') {
+			if (cmdID){
+				cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}"><command xid="${cmdID}">${cmd}</command></device>\n`
+			} else {
+				cmd = `<?xml version="1.0" ?><device class="${this.config.model}" id="${this.config.id}"><command>${cmd}</command></device>\n`
+			}
+            this.udp.send(cmd)
+        } else if (this.model.protocol == 'telnet') {
+            this.telnet.write(cmd + '\r')
+        }
+        this.log('debug', 'Sent: ' + cmd + ' over ' + this.model.protocol)
+
+    }
+
+    
 }
 runEntrypoint(BlueBoltInstance, [])
