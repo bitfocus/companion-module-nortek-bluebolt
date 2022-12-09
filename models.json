@@ -5,7 +5,11 @@
         "banks": 3,
         "protocol": "udp",
         "smartlink": false,
-        "deviceID": "MAC Address"
+        "deviceID": "MAC Address",
+        "variables": {
+            "power": true,
+            "trigger": true
+        }
     },
     "sm3": {
         "id": "sm3",
@@ -13,7 +17,11 @@
         "banks": 2,
         "protocol": "udp",
         "smartlink": false,
-        "deviceID": "MAC Address"
+        "deviceID": "MAC Address",
+        "variables": {
+            "power": true,
+            "trigger": false
+        }
     },
     "m4315": {
         "id": "m4315",
@@ -37,7 +45,11 @@
         "banks": 3,
         "protocol": "udp",
         "smartlink": true,
-        "deviceID": "Serial Number"
+        "deviceID": "Serial Number",
+        "variables": {
+            "power": true,
+            "trigger": false
+        }
     },
     "cn2400": {
         "id": "cn2400",
@@ -45,7 +57,11 @@
         "banks": 3,
         "protocol": "udp",
         "smartlink": true,
-        "deviceID": "Serial Number"
+        "deviceID": "Serial Number",
+        "variables": {
+            "power": true,
+            "trigger": false
+        }
     },
     "cn3600": {
         "id": "cn3600",
@@ -53,7 +69,11 @@
         "banks": 3,
         "protocol": "udp",
         "smartlink": true,
-        "deviceID": "Serial Number"
+        "deviceID": "Serial Number",
+        "variables": {
+            "power": true,
+            "trigger": false
+        }
     },
     "cnmp15": {
         "id": "cnmp15",
@@ -61,7 +81,11 @@
         "banks": 1,
         "protocol": "udp",
         "smartlink": true,
-        "deviceID": "Serial Number"
+        "deviceID": "Serial Number",
+        "variables": {
+            "power": true,
+            "trigger": false
+        }
     },
     "cnmp20": {
         "id": "cnmp20",
@@ -69,6 +93,10 @@
         "banks": 1,
         "protocol": "udp",
         "smartlink": true,
-        "deviceID": "Serial Number"
+        "deviceID": "Serial Number",
+        "variables": {
+            "power": true,
+            "trigger": false
+        }
     }
 }

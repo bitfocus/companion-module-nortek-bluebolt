@@ -1,6 +1,8 @@
 const { InstanceBase, Regex, runEntrypoint, UDPHelper, TelnetHelper } = require('@companion-module/base')
 const { parseString } = require('xml2js')
 const actions = require('./actions')
+const variables = require('./variables')
+const feedbacks = require('./feedbacks')
 const models = require('./models.json')
 
 
@@ -9,7 +11,9 @@ class BlueBoltInstance extends InstanceBase {
 		super(internal)
 
 		Object.assign(this, {
-			...actions
+			...actions,
+			...variables,
+			...feedbacks
 		})
 	}
 
@@ -50,7 +54,9 @@ class BlueBoltInstance extends InstanceBase {
 				this.udp.on('data', (data) => {
 					this.incomingDataUDP(data)
 				})
-				this.pollTimer = setInterval(this.poll.bind(this), this.config.pollingInterval)
+				if (this.config.pollingEnable) {
+					this.pollTimer = setInterval(this.poll.bind(this), this.config.pollingInterval)
+				}
 			} else if (this.model.protocol == 'telnet') {
 				this.telnet = new TelnetHelper(this.config.host, 23)
 
@@ -85,6 +91,8 @@ class BlueBoltInstance extends InstanceBase {
 			this.updateStatus('bad_config')
 		}
 		this.updateActions()
+		this.updateVariables()
+		this.updateFeedbacks()
 	}
 
 	// When module gets deleted
@@ -151,8 +159,16 @@ class BlueBoltInstance extends InstanceBase {
 				type: 'textinput',
 				id: 'id',
 				label: 'Device ID',
-				width: 6,
+				width: 12,
 				regex: '/^[a-zA-Z0-9]*$/',
+			},
+			{
+				type: 'checkbox',
+				id: 'pollingEnable',
+				label: 'Polling',
+				description: 'Enable polling for variables/feedback?',
+				width: 6,
+				default: false,
 			},
 			{
 				type: 'number',
@@ -165,6 +181,14 @@ class BlueBoltInstance extends InstanceBase {
 				required: true,
 			},
 		]
+	}
+	
+	poll() {
+		if (this.model.protocol == 'udp') {
+            this.sendBlueBolt('<sendstatus/>', 'pollCallback')
+        } else if (this.model.protocol == 'telnet') {
+            
+        }
 	}
 
 	incomingDataUDP(data) {
@@ -179,17 +203,44 @@ class BlueBoltInstance extends InstanceBase {
 			}
 		})
 	}
-	
-	poll() {
-		if (this.model.protocol == 'udp') {
-            this.sendBlueBolt('<sendstatus/>', 'pollCallback')
-        } else if (this.model.protocol == 'telnet') {
-            
-        }
-	}
 
 	pollCallback(data) {
-		this.log('debug', data.device.status[0].voltage[0])
+		if (this.model.variables) {
+			this.log('debug', 'setting vars')
+			var variables = {}
+			if (this.model.variables.power === true) {
+				this.log('debug', 'setting power vars')
+				variables.voltage = data.device.status[0].voltage[0]
+				variables.amperage = data.device.status[0].amperage[0]
+				variables.wattage = data.device.status[0].wattage[0]
+				variables.pwrva = data.device.status[0].pwrva[0]
+				variables.pwrfact = data.device.status[0].pwrfact[0]
+				if (this.model.banks > 0) {
+					for (let i = 0; i < this.model.banks; i++) {
+						variables[`bank${ i+1 }`] = data.device.status[0].outlet[i]._
+					}
+				}
+				if (this.model.smartlink === true) {
+					variables.remote = data.device.status[0].remote[0]
+					variables.protok = data.device.status[0].protok[0]
+					variables.smp = data.device.status[0].smp[0]
+					variables.secok = data.device.status[0].secok[0]
+					variables.overvolt = data.device.status[0].overvolt[0]
+					variables.undervolt = data.device.status[0].undervolt[0]
+					variables.pwrok = data.device.status[0].pwrok[0]
+					variables.seqprog = data.device.status[0].seqprog[0]
+				} else {
+					variables.seq = data.device.status[0].seq[0]
+					variables.pwrcond = data.device.status[0].pwrcond[0]
+					variables.wiringfault = data.device.status[0].wiringfault[0]
+				}
+			}
+			if (this.model.variables.trigger === true) {
+				variables.triggersense = data.device.status[0].triggersense[0]
+				variables.trigger = data.device.status[0].trigger[0]
+			}
+			this.setVariableValues(variables)
+		}
 	}
 
 	sendBlueBolt(cmd, cmdID) {
