@@ -4,6 +4,10 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 Controls BlueBolt Compatible sequencers from Furman and Panamax
 
+**V2.1.0**
+
+- Toggle support (based on polled data)
+
 **V2.0.0**
 
 - Variable and Feedback support for SmartLink models and M4000 PRO (SM3-PRO supported but untested)
