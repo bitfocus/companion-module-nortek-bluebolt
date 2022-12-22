@@ -33,6 +33,7 @@ exports.updateActions = function () {
     if (this.model.banks > 0) {
       actions["udp_cmd_power"] = {
         name: "Power Action",
+        description: "NOTE: Toggle anly works if Polling is enabled",
         options: [
           {
             type: "number",
@@ -53,6 +54,7 @@ exports.updateActions = function () {
               { id: "on", label: "On" },
               { id: "off", label: "Off" },
               { id: "cycle", label: "Cycle" },
+              { id: "toggle", label: "Toggle" },
             ],
           },
         ],
@@ -67,6 +69,20 @@ exports.updateActions = function () {
               break;
             case "cycle":
               this.sendBlueBolt(`<cycleoutlet id="${opt.id_bank}"/>`);
+              break;
+            case "toggle":
+              if (this.config.pollingEnable) {
+                var newState =
+                  this.varStates[`bank${opt.id_bank}`] == "1" ? "0" : "1";
+                this.sendBlueBolt(
+                  `<outlet id="${opt.id_bank}">${newState}</outlet>`
+                );
+              } else {
+                this.log(
+                  "error",
+                  "Action Error: Enable Polling to use the Toggle action"
+                );
+              }
               break;
           }
         },

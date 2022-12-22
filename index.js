@@ -207,8 +207,10 @@ class BlueBoltInstance extends InstanceBase {
     parseString(data, (err, result) => {
       if (result.device.ack[0].$.xid) {
         var callback = result.device.ack[0].$.xid;
-        if (callback === "pollCallback") {
-          this.pollCallback(result);
+        switch (callback) {
+          case "pollCallback":
+            this.pollCallback(result);
+            break;
         }
       }
     });
@@ -216,7 +218,6 @@ class BlueBoltInstance extends InstanceBase {
 
   pollCallback(data) {
     if (this.model.variables) {
-      this.log("debug", "setting vars");
       if (this.model.variables.power === true) {
         this.varStates.voltage = data.device.status[0].voltage[0];
         this.varStates.amperage = data.device.status[0].amperage[0];
