@@ -1,4 +1,4 @@
-const { InstanceBase, Regex, runEntrypoint, UDPHelper, TelnetHelper } = require('@companion-module/base')
+const { InstanceBase, Regex, runEntrypoint, UDPHelper, TelnetHelper, combineRgb} = require('@companion-module/base')
 const { parseString } = require('xml2js')
 const actions = require('./actions')
 const variables = require('./variables')
@@ -36,6 +36,7 @@ class BlueBoltInstance extends InstanceBase {
 			this.config.model = 'm4000'
 		}
 		this.model = models[this.config.model]
+		this.varStates = {}
 
 		this.updateStatus('connecting')
 
@@ -192,11 +193,9 @@ class BlueBoltInstance extends InstanceBase {
 	}
 
 	incomingDataUDP(data) {
-		//this.log('debug', 'Received: ' + data.toString())
 		parseString(data, (err, result) => {
 			if (result.device.ack[0].$.xid){
 				var callback = result.device.ack[0].$.xid
-				this.log('debug', "callback provided: " + callback)
 				if (callback === "pollCallback") {
 					this.pollCallback(result)
 				}
@@ -207,39 +206,38 @@ class BlueBoltInstance extends InstanceBase {
 	pollCallback(data) {
 		if (this.model.variables) {
 			this.log('debug', 'setting vars')
-			var variables = {}
 			if (this.model.variables.power === true) {
-				this.log('debug', 'setting power vars')
-				variables.voltage = data.device.status[0].voltage[0]
-				variables.amperage = data.device.status[0].amperage[0]
-				variables.wattage = data.device.status[0].wattage[0]
-				variables.pwrva = data.device.status[0].pwrva[0]
-				variables.pwrfact = data.device.status[0].pwrfact[0]
+				this.varStates.voltage = data.device.status[0].voltage[0]
+				this.varStates.amperage = data.device.status[0].amperage[0]
+				this.varStates.wattage = data.device.status[0].wattage[0]
+				this.varStates.pwrva = data.device.status[0].pwrva[0]
+				this.varStates.pwrfact = data.device.status[0].pwrfact[0]
 				if (this.model.banks > 0) {
 					for (let i = 0; i < this.model.banks; i++) {
-						variables[`bank${ i+1 }`] = data.device.status[0].outlet[i]._
+						this.varStates[`bank${ i+1 }`] = data.device.status[0].outlet[i]._
 					}
 				}
 				if (this.model.smartlink === true) {
-					variables.remote = data.device.status[0].remote[0]
-					variables.protok = data.device.status[0].protok[0]
-					variables.smp = data.device.status[0].smp[0]
-					variables.secok = data.device.status[0].secok[0]
-					variables.overvolt = data.device.status[0].overvolt[0]
-					variables.undervolt = data.device.status[0].undervolt[0]
-					variables.pwrok = data.device.status[0].pwrok[0]
-					variables.seqprog = data.device.status[0].seqprog[0]
+					this.varStates.remote = data.device.status[0].remote[0]
+					this.varStates.protok = data.device.status[0].protok[0]
+					this.varStates.smp = data.device.status[0].smp[0]
+					this.varStates.secok = data.device.status[0].secok[0]
+					this.varStates.overvolt = data.device.status[0].overvolt[0]
+					this.varStates.undervolt = data.device.status[0].undervolt[0]
+					this.varStates.pwrok = data.device.status[0].pwrok[0]
+					this.varStates.seqprog = data.device.status[0].seqprog[0]
 				} else {
-					variables.seq = data.device.status[0].seq[0]
-					variables.pwrcond = data.device.status[0].pwrcond[0]
-					variables.wiringfault = data.device.status[0].wiringfault[0]
+					this.varStates.seq = data.device.status[0].seq[0]
+					this.varStates.pwrcond = data.device.status[0].pwrcond[0]
+					this.varStates.wiringfault = data.device.status[0].wiringfault[0]
 				}
 			}
 			if (this.model.variables.trigger === true) {
-				variables.triggersense = data.device.status[0].triggersense[0]
-				variables.trigger = data.device.status[0].trigger[0]
+				this.varStates.triggersense = data.device.status[0].triggersense[0]
+				this.varStates.trigger = data.device.status[0].trigger[0]
 			}
-			this.setVariableValues(variables)
+			this.setVariableValues(this.varStates)
+			this.checkFeedbacks()
 		}
 	}
 
