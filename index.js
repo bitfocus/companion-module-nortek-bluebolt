@@ -4,6 +4,7 @@ const {
   runEntrypoint,
   UDPHelper,
   TelnetHelper,
+  InstanceStatus,
 } = require("@companion-module/base");
 const { parseString } = require("xml2js");
 const actions = require("./actions");
@@ -43,7 +44,7 @@ class BlueBoltInstance extends InstanceBase {
     this.model = models[this.config.model];
     this.varStates = {};
 
-    this.updateStatus("connecting");
+    this.updateStatus(InstanceStatus.Connecting);
 
     if (this.config.host) {
       if (this.model.protocol == "udp") {
@@ -95,10 +96,10 @@ class BlueBoltInstance extends InstanceBase {
           }
         });
       } else {
-        this.updateStatus("bad_config");
+        this.updateStatus(InstanceStatus.BadConfig);
       }
     } else {
-      this.updateStatus("bad_config");
+      this.updateStatus(InstanceStatus.BadConfig);
     }
     this.updateActions();
     this.updateVariables();
