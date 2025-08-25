@@ -11,6 +11,7 @@ const actions = require("./actions");
 const variables = require("./variables");
 const feedbacks = require("./feedbacks");
 const models = require("./models.json");
+const upgradeScripts = require("./upgrades");
 
 class BlueBoltInstance extends InstanceBase {
   constructor(internal) {
@@ -34,6 +35,10 @@ class BlueBoltInstance extends InstanceBase {
     }
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
+    }
+
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
     }
 
     this.config = config;
@@ -120,6 +125,10 @@ class BlueBoltInstance extends InstanceBase {
       clearInterval(this.pollTimer);
       delete this.pollTimer;
     }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      delete this.reconnectTimer;
+    }
     this.log("info", "destroy" + this.id);
   }
 
@@ -180,7 +189,7 @@ class BlueBoltInstance extends InstanceBase {
       {
         type: "checkbox",
         id: "pollingEnable",
-        label: "Polling",
+        label: "Polling (UDP Only)",
         description: "Enable polling for variables/feedback?",
         width: 6,
         default: false,
@@ -201,6 +210,13 @@ class BlueBoltInstance extends InstanceBase {
   poll() {
     if (this.model.protocol == "udp") {
       this.sendBlueBolt("<sendstatus/>", "pollCallback");
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+      }
+      this.reconnectTimer = setTimeout(() => {
+        this.updateStatus(InstanceStatus.Disconnected, "Connection timed out");
+        this.connected = false;
+      }, this.config.pollingInterval ?? 500);
     }
   }
 
@@ -218,6 +234,11 @@ class BlueBoltInstance extends InstanceBase {
   }
 
   pollCallback(data) {
+    if (this.reconnectTimer) {
+      this.log("debug", "Resetting poll timer");
+      clearTimeout(this.reconnectTimer);
+      this.updateStatus(InstanceStatus.Ok);
+    }
     if (this.model.variables) {
       if (this.model.variables.power === true) {
         this.varStates.voltage = data.device.status[0].voltage[0];
@@ -268,4 +289,4 @@ class BlueBoltInstance extends InstanceBase {
     this.log("debug", "Sent: " + cmd + " over " + this.model.protocol);
   }
 }
-runEntrypoint(BlueBoltInstance, []);
+runEntrypoint(BlueBoltInstance, upgradeScripts);

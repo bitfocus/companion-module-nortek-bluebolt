@@ -5,34 +5,42 @@ exports.updateFeedbacks = function () {
     var feedbacks = {};
     if (this.model.variables.power === true) {
       if (this.model.banks > 0) {
-        for (let i = 0; i < this.model.banks; i++) {
-          feedbacks[`bank${i + 1}`] = {
-            type: "boolean",
-            name: `Bank ${i + 1}`,
-            defaultStyle: {
-              bgcolor: combineRgb(255, 0, 0),
-              color: combineRgb(0, 0, 0),
+        feedbacks[`powerStatus`] = {
+          type: "boolean",
+          name: `Bank Power Status`,
+          defaultStyle: {
+            bgcolor: combineRgb(255, 0, 0),
+            color: combineRgb(0, 0, 0),
+          },
+          options: [
+            {
+              type: "number",
+              id: "bank",
+              label: "Bank:",
+              default: "1",
+              min: 1,
+              max: this.model.banks,
+              step: 1,
+              required: true,
             },
-            options: [
-              {
-                type: "dropdown",
-                label: "Power Status",
-                id: "option",
-                choices: [
-                  { id: "1", label: "On" },
-                  { id: "0", label: "Off" },
-                ],
-                default: 1,
-              },
-            ],
-            callback: (feedback) => {
-              return (
-                this.varStates[`bank${i + 1}`] ==
-                Number(feedback.options.option)
-              );
+            {
+              type: "dropdown",
+              label: "Power Status",
+              id: "option",
+              choices: [
+                { id: "1", label: "On" },
+                { id: "0", label: "Off" },
+              ],
+              default: 1,
             },
-          };
-        }
+          ],
+          callback: (feedback) => {
+            return (
+              this.varStates[`bank${feedback.options.id_bank}`] ==
+              Number(feedback.options.option)
+            );
+          },
+        };
       }
       if (this.model.smartlink === true) {
         feedbacks.remote = {
