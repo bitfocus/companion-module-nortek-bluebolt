@@ -4,7 +4,12 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 Controls BlueBolt Compatible sequencers from Furman and Panamax
 
-**V2.1.0**
+**V2.2.0**
+
+- Add disconnect detection if polling is enabled
+- Unify feedbacks for different banks
+
+- **V2.1.0**
 
 - Toggle support (based on polled data)
 
