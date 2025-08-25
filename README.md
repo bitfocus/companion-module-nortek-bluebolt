@@ -44,8 +44,3 @@ Controls BlueBolt Compatible sequencers from Furman and Panamax
 - Support for CN-15MP connected via BB-RS232
 - Support for CN-20MP connected via BB-RS232
 - Support matrix in setup page to clarify setup
-
-**TODO**
-
-- Feedback/variables?
-- Toggle functions?
