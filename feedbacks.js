@@ -17,7 +17,7 @@ exports.updateFeedbacks = function () {
               type: "number",
               id: "bank",
               label: "Bank:",
-              default: "1",
+              default: 1,
               min: 1,
               max: this.model.banks,
               step: 1,
@@ -36,7 +36,7 @@ exports.updateFeedbacks = function () {
           ],
           callback: (feedback) => {
             return (
-              this.varStates[`bank${feedback.options.id_bank}`] ==
+              this.varStates[`bank${feedback.options.bank}`] ==
               Number(feedback.options.option)
             );
           },
