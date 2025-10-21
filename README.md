@@ -4,6 +4,10 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 Controls BlueBolt Compatible sequencers from Furman and Panamax
 
+**V2.3.0**
+
+- Add variable support
+
 **V2.2.0**
 
 - Add disconnect detection if polling is enabled
