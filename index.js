@@ -178,6 +178,7 @@ class BlueBoltInstance extends InstanceBase {
         width: 6,
         required: true,
         regex: Regex.IP,
+        useVariables: true,
       },
       {
         type: "textinput",
@@ -185,6 +186,7 @@ class BlueBoltInstance extends InstanceBase {
         label: "Device ID",
         width: 12,
         regex: "/^[a-zA-Z0-9]*$/",
+        useVariables: true,
       },
       {
         type: "checkbox",
