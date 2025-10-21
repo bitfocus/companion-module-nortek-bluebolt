@@ -207,6 +207,10 @@ class BlueBoltInstance extends InstanceBase {
     ];
   }
 
+  clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
   poll() {
     if (this.model.protocol == "udp") {
       this.sendBlueBolt("<sendstatus/>", "pollCallback");

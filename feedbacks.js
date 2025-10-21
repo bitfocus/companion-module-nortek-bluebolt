@@ -1,4 +1,4 @@
-const { combineRgb } = require("@companion-module/base");
+const { combineRgb, Regex } = require("@companion-module/base");
 
 exports.updateFeedbacks = function () {
   if (this.model.variables) {
@@ -14,14 +14,13 @@ exports.updateFeedbacks = function () {
           },
           options: [
             {
-              type: "number",
+              type: "textinput",
               id: "bank",
-              label: "Bank:",
-              default: 1,
-              min: 1,
-              max: this.model.banks,
-              step: 1,
+              label: "Bank",
+              default: "1",
+              regex: Regex.NUMBER,
               required: true,
+              useVariables: true,
             },
             {
               type: "dropdown",
@@ -35,9 +34,13 @@ exports.updateFeedbacks = function () {
             },
           ],
           callback: (feedback) => {
+            let bank = this.clamp(
+              parseInt(feedback.options.bank),
+              1,
+              this.model.banks
+            );
             return (
-              this.varStates[`bank${feedback.options.bank}`] ==
-              Number(feedback.options.option)
+              this.varStates[`bank${bank}`] == Number(feedback.options.option)
             );
           },
         };

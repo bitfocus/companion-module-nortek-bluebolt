@@ -1,3 +1,5 @@
+const { Regex } = require("@companion-module/base");
+
 exports.updateActions = function () {
   var actions = {};
 
@@ -17,8 +19,9 @@ exports.updateActions = function () {
         },
       ],
       callback: async (event) => {
-        const opt = await event.options;
-        this.sendBlueBolt(`<sequence>${opt.id_sequencedir}</sequence>`);
+        this.sendBlueBolt(
+          `<sequence>${event.options.id_sequencedir}</sequence>`
+        );
       },
     };
     if (!this.model.smartlink) {
@@ -33,17 +36,16 @@ exports.updateActions = function () {
     if (this.model.banks > 0) {
       actions["udp_cmd_power"] = {
         name: "Power Action",
-        description: "NOTE: Toggle anly works if Polling is enabled",
+        description: "NOTE: Toggle only works if Polling is enabled",
         options: [
           {
-            type: "number",
+            type: "textinput",
             id: "id_bank",
             label: "Bank:",
             default: "1",
-            min: 1,
-            max: this.model.banks,
-            step: 1,
+            regex: Regex.NUMBER,
             required: true,
+            useVariables: true,
           },
           {
             type: "dropdown",
@@ -59,24 +61,25 @@ exports.updateActions = function () {
           },
         ],
         callback: async (event) => {
-          const opt = await event.options;
-          switch (opt.id_power_option) {
+          let bank = this.clamp(
+            parseInt(event.options.id_bank),
+            1,
+            this.model.banks
+          );
+          switch (event.options.id_power_option) {
             case "on":
-              this.sendBlueBolt(`<outlet id="${opt.id_bank}">1</outlet>`);
+              this.sendBlueBolt(`<outlet id="${bank}">1</outlet>`);
               break;
             case "off":
-              this.sendBlueBolt(`<outlet id="${opt.id_bank}">0</outlet>`);
+              this.sendBlueBolt(`<outlet id="${bank}">0</outlet>`);
               break;
             case "cycle":
-              this.sendBlueBolt(`<cycleoutlet id="${opt.id_bank}"/>`);
+              this.sendBlueBolt(`<cycleoutlet id="${bank}"/>`);
               break;
             case "toggle":
               if (this.config.pollingEnable) {
-                var newState =
-                  this.varStates[`bank${opt.id_bank}`] == "1" ? "0" : "1";
-                this.sendBlueBolt(
-                  `<outlet id="${opt.id_bank}">${newState}</outlet>`
-                );
+                var newState = this.varStates[`bank${bank}`] == "1" ? "0" : "1";
+                this.sendBlueBolt(`<outlet id="${bank}">${newState}</outlet>`);
               } else {
                 this.log(
                   "error",
@@ -92,14 +95,13 @@ exports.updateActions = function () {
           name: "Set Bank Delay",
           options: [
             {
-              type: "number",
+              type: "textinput",
               id: "id_bank",
               label: "Bank:",
               default: "1",
-              min: 1,
-              max: this.model.banks,
-              step: 1,
+              regex: Regex.NUMBER,
               required: true,
+              useVariables: true,
             },
             {
               type: "dropdown",
@@ -113,20 +115,24 @@ exports.updateActions = function () {
               ],
             },
             {
-              type: "number",
+              type: "textinput",
               id: "id_delay",
               label: "Delay (s)",
               default: "1",
-              min: 0,
-              max: 65536,
-              step: 1,
+              regex: Regex.NUMBER,
               required: true,
+              useVariables: true,
             },
           ],
           callback: async (event) => {
-            const opt = await event.options;
+            let bank = this.clamp(
+              parseInt(event.options.id_bank),
+              1,
+              this.model.banks
+            );
+            let delay = this.clamp(parseInt(event.options.id_delay), 0, 65536);
             this.sendBlueBolt(
-              `<set><delay id="${opt.id_bank}" act="${opt.id_delay_type}">${opt.id_delay}</delay></set>`
+              `<set><delay id="${bank}" act="${event.options.id_delay_type}">${delay}</delay></set>`
             );
           },
         };
@@ -169,14 +175,13 @@ exports.updateActions = function () {
         name: "Enable Trigger",
         options: [
           {
-            type: "number",
+            type: "textinput",
             id: "id_bank",
             label: "Bank:",
             default: "1",
-            min: 1,
-            max: this.model.banks,
-            step: 1,
+            regex: Regex.NUMBER,
             required: true,
+            useVariables: true,
           },
           {
             type: "dropdown",
@@ -190,9 +195,13 @@ exports.updateActions = function () {
           },
         ],
         callback: async (event) => {
-          const opt = await event.options;
+          let bank = this.clamp(
+            parseInt(event.options.id_bank),
+            1,
+            this.model.banks
+          );
           this.sendBlueBolt(
-            `<set><triggerena id="${opt.id_bank}">${opt.id_triggerena}</triggerena></set>`
+            `<set><triggerena id="${bank}">${event.options.id_triggerena}</triggerena></set>`
           );
         },
       };
@@ -200,21 +209,23 @@ exports.updateActions = function () {
         name: "Set Brightness",
         options: [
           {
-            type: "number",
+            type: "textinput",
             label: "Brightness",
             id: "id_brightness",
-            min: 1,
-            max: 5,
-            default: 1,
-            step: 1,
+            default: "1",
+            regex: Regex.NUMBER,
             required: true,
-            range: true,
+            useVariables: true,
           },
         ],
         callback: async (event) => {
-          const opt = await event.options;
+          let brightness = this.clamp(
+            parseInt(event.options.id_brightness),
+            1,
+            5
+          );
           this.sendBlueBolt(
-            `<set><brightness>${opt.id_brightness}</brightness></set>`
+            `<set><brightness>${brightness}</brightness></set>`
           );
         },
       };
@@ -237,22 +248,20 @@ exports.updateActions = function () {
         },
       ],
       callback: async (event) => {
-        const opt = await event.options;
-        this.sendBlueBolt(opt.id_trigger_option);
+        this.sendBlueBolt(event.options.id_trigger_option);
       },
     };
     actions["telnet_cmd_power"] = {
       name: "Bank Power Action",
       options: [
         {
-          type: "number",
+          type: "textinput",
           id: "id_bank",
           label: "Bank:",
           default: "1",
-          min: 1,
-          max: this.model.banks,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
         {
           type: "dropdown",
@@ -266,22 +275,25 @@ exports.updateActions = function () {
         },
       ],
       callback: async (event) => {
-        const opt = await event.options;
-        this.sendBlueBolt(`!SWITCH ${opt.id_bank} ${opt.id_power_option}`);
+        let bank = this.clamp(
+          parseInt(event.options.id_bank),
+          1,
+          this.model.banks
+        );
+        this.sendBlueBolt(`!SWITCH ${bank} ${event.options.id_power_option}`);
       },
     };
     actions["telnet_set_trigger_source"] = {
       name: "Set Trigger Source",
       options: [
         {
-          type: "number",
+          type: "textinput",
           id: "id_bank",
           label: "Bank:",
           default: "1",
-          min: 1,
-          max: this.model.banks,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
         {
           type: "dropdown",
@@ -298,9 +310,13 @@ exports.updateActions = function () {
         },
       ],
       callback: async (event) => {
-        const opt = await event.options;
+        let bank = this.clamp(
+          parseInt(event.options.id_bank),
+          1,
+          this.model.banks
+        );
         this.sendBlueBolt(
-          `!SET_TRIGGER ${opt.id_bank} ${opt.id_trigger_source}`
+          `!SET_TRIGGER ${bank} ${event.options.id_trigger_source}`
         );
       },
     };
@@ -308,72 +324,70 @@ exports.updateActions = function () {
       name: "Set Reboot Delay",
       options: [
         {
-          type: "number",
+          type: "textinput",
           id: "id_delay_1",
           label: "Button 1 Delay",
           default: "1",
-          min: 1,
-          max: 255,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
         {
-          type: "number",
+          type: "textinput",
           id: "id_delay_2",
           label: "Button 2 Delay",
           default: "1",
-          min: 1,
-          max: 255,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
       ],
       callback: async (event) => {
-        const opt = await event.options;
-        this.sendBlueBolt(
-          `!SET_REBOOT_DELAY ${opt.id_delay_1} ${opt.id_delay_2}`
-        );
+        let delay1 = this.clamp(parseInt(event.options.id_delay_1), 1, 255);
+        let delay2 = this.clamp(parseInt(event.options.id_delay_2), 1, 255);
+        this.sendBlueBolt(`!SET_REBOOT_DELAY ${delay1} ${delay2}`);
       },
     };
     actions["telnet_set_delay"] = {
       name: "Set Delay",
       options: [
         {
-          type: "number",
+          type: "textinput",
           id: "id_bank",
           label: "Bank:",
           default: "1",
-          min: 1,
-          max: this.model.banks,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
         {
-          type: "number",
+          type: "textinput",
           id: "id_delay_on",
           label: "On Delay",
           default: "1",
-          min: 1,
-          max: 255,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
         {
-          type: "number",
+          type: "textinput",
           id: "id_delay_off",
           label: "Off Delay",
           default: "1",
-          min: 1,
-          max: 255,
-          step: 1,
+          regex: Regex.NUMBER,
           required: true,
+          useVariables: true,
         },
       ],
       callback: async (event) => {
-        const opt = await event.options;
-        this.sendBlueBolt(
-          `!SET_DELAY ${opt.id_bank} ${opt.id_delay_on} ${opt.id_delay_off}`
+        let bank = this.clamp(
+          parseInt(event.options.id_bank),
+          1,
+          this.model.banks
         );
+        let delayOn = this.clamp(parseInt(event.options.id_delay_on), 1, 255);
+        let delayOff = this.clamp(parseInt(event.options.id_delay_off), 1, 255);
+        this.sendBlueBolt(`!SET_DELAY ${bank} ${delayOn} ${delayOff}`);
       },
     };
   }
