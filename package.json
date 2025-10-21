@@ -19,7 +19,8 @@
 		"url": "https://github.com/bitfocus/companion-module-nortek-bluebolt/issues"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^0.5.0"
+		"@companion-module/tools": "^0.5.0",
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
 		"@companion-module/base": "~1.13.4",

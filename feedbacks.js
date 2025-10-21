@@ -14,14 +14,13 @@ exports.updateFeedbacks = function () {
           },
           options: [
             {
-              type: "number",
+              type: "textinput",
               id: "bank",
               label: "Bank:",
-              default: 1,
-              min: 1,
-              max: this.model.banks,
-              step: 1,
+              default: "1",
               required: true,
+              useVariables: true,
+              regex: "/^\\d+$/",
             },
             {
               type: "dropdown",
