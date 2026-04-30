@@ -38,3 +38,8 @@
 - Smartlink OK
 - Power Status
 - Squence Status
+
+**Available presets for Bluebolt** (UDP models with power variables)
+
+- Toggle Bank 1..N (per-bank)
+- Built-in Bank Power Status feedback styling (green when bank is ON)

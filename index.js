@@ -9,6 +9,7 @@ const { parseString } = require("xml2js");
 const actions = require("./actions");
 const variables = require("./variables");
 const feedbacks = require("./feedbacks");
+const presets = require("./presets");
 const models = require("./models.json");
 const upgradeScripts = require("./upgrades");
 
@@ -20,6 +21,7 @@ module.exports = class BlueBoltInstance extends InstanceBase {
       ...actions,
       ...variables,
       ...feedbacks,
+      ...presets,
     });
   }
 
@@ -108,6 +110,7 @@ module.exports = class BlueBoltInstance extends InstanceBase {
     this.updateActions();
     this.updateVariables();
     this.updateFeedbacks();
+    this.updatePresets();
   }
 
   // When module gets deleted
