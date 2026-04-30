@@ -41,5 +41,5 @@
 
 **Available presets for Bluebolt** (UDP models with power variables)
 
-- Toggle Bank 1..N (per-bank)
+- Toggle Bank 1..N (per-bank, requires polling to be enabled)
 - Built-in Bank Power Status feedback styling (green when bank is ON)
