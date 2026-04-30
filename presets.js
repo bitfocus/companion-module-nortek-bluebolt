@@ -8,7 +8,9 @@ exports.updatePresets = function () {
     this.model.protocol === "udp" &&
     this.model.variables &&
     this.model.variables.power === true &&
-    this.model.banks > 0
+    this.model.banks > 0 &&
+    this.config &&
+    this.config.pollingEnable === true
   ) {
     const togglePresetIds = [];
 
