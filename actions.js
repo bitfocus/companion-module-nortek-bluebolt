@@ -20,7 +20,7 @@ exports.updateActions = function () {
       ],
       callback: async (event) => {
         this.sendBlueBolt(
-          `<sequence>${event.options.id_sequencedir}</sequence>`
+          `<sequence>${event.options.id_sequencedir}</sequence>`,
         );
       },
     };
@@ -39,13 +39,12 @@ exports.updateActions = function () {
         description: "NOTE: Toggle only works if Polling is enabled",
         options: [
           {
-            type: "textinput",
+            type: "number",
             id: "id_bank",
-            label: "Bank:",
-            default: "1",
-            regex: Regex.NUMBER,
-            required: true,
-            useVariables: true,
+            label: "Bank",
+            default: 1,
+            min: 1,
+            max: this.model.banks,
           },
           {
             type: "dropdown",
@@ -61,11 +60,8 @@ exports.updateActions = function () {
           },
         ],
         callback: async (event) => {
-          let bank = this.clamp(
-            parseInt(event.options.id_bank),
-            1,
-            this.model.banks
-          );
+          let bank = event.options.id_bank;
+
           switch (event.options.id_power_option) {
             case "on":
               this.sendBlueBolt(`<outlet id="${bank}">1</outlet>`);
@@ -83,7 +79,7 @@ exports.updateActions = function () {
               } else {
                 this.log(
                   "error",
-                  "Action Error: Enable Polling to use the Toggle action"
+                  "Action Error: Enable Polling to use the Toggle action",
                 );
               }
               break;
@@ -95,13 +91,12 @@ exports.updateActions = function () {
           name: "Set Bank Delay",
           options: [
             {
-              type: "textinput",
+              type: "number",
               id: "id_bank",
-              label: "Bank:",
-              default: "1",
-              regex: Regex.NUMBER,
-              required: true,
-              useVariables: true,
+              label: "Bank",
+              default: 1,
+              min: 1,
+              max: this.model.banks,
             },
             {
               type: "dropdown",
@@ -115,24 +110,19 @@ exports.updateActions = function () {
               ],
             },
             {
-              type: "textinput",
+              type: "number",
               id: "id_delay",
               label: "Delay (s)",
-              default: "1",
-              regex: Regex.NUMBER,
-              required: true,
-              useVariables: true,
+              default: 1,
+              min: 0,
+              max: 65535,
             },
           ],
           callback: async (event) => {
-            let bank = this.clamp(
-              parseInt(event.options.id_bank),
-              1,
-              this.model.banks
-            );
-            let delay = this.clamp(parseInt(event.options.id_delay), 0, 65536);
+            let bank = event.options.id_bank;
+            let delay = event.options.id_delay;
             this.sendBlueBolt(
-              `<set><delay id="${bank}" act="${event.options.id_delay_type}">${delay}</delay></set>`
+              `<set><delay id="${bank}" act="${event.options.id_delay_type}">${delay}</delay></set>`,
             );
           },
         };
@@ -175,13 +165,12 @@ exports.updateActions = function () {
         name: "Enable Trigger",
         options: [
           {
-            type: "textinput",
+            type: "number",
             id: "id_bank",
-            label: "Bank:",
-            default: "1",
-            regex: Regex.NUMBER,
-            required: true,
-            useVariables: true,
+            label: "Bank",
+            default: 1,
+            min: 1,
+            max: this.model.banks,
           },
           {
             type: "dropdown",
@@ -195,13 +184,9 @@ exports.updateActions = function () {
           },
         ],
         callback: async (event) => {
-          let bank = this.clamp(
-            parseInt(event.options.id_bank),
-            1,
-            this.model.banks
-          );
+          let bank = event.options.id_bank;
           this.sendBlueBolt(
-            `<set><triggerena id="${bank}">${event.options.id_triggerena}</triggerena></set>`
+            `<set><triggerena id="${bank}">${event.options.id_triggerena}</triggerena></set>`,
           );
         },
       };
@@ -209,23 +194,22 @@ exports.updateActions = function () {
         name: "Set Brightness",
         options: [
           {
-            type: "textinput",
+            type: "number",
             label: "Brightness",
             id: "id_brightness",
-            default: "1",
-            regex: Regex.NUMBER,
-            required: true,
-            useVariables: true,
+            default: 1,
+            min: 1,
+            max: 5,
           },
         ],
         callback: async (event) => {
           let brightness = this.clamp(
             parseInt(event.options.id_brightness),
             1,
-            5
+            5,
           );
           this.sendBlueBolt(
-            `<set><brightness>${brightness}</brightness></set>`
+            `<set><brightness>${brightness}</brightness></set>`,
           );
         },
       };
@@ -255,13 +239,12 @@ exports.updateActions = function () {
       name: "Bank Power Action",
       options: [
         {
-          type: "textinput",
+          type: "number",
           id: "id_bank",
-          label: "Bank:",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          label: "Bank",
+          default: 1,
+          min: 1,
+          max: this.model.banks,
         },
         {
           type: "dropdown",
@@ -275,11 +258,7 @@ exports.updateActions = function () {
         },
       ],
       callback: async (event) => {
-        let bank = this.clamp(
-          parseInt(event.options.id_bank),
-          1,
-          this.model.banks
-        );
+        let bank = event.options.id_bank;
         this.sendBlueBolt(`!SWITCH ${bank} ${event.options.id_power_option}`);
       },
     };
@@ -287,13 +266,12 @@ exports.updateActions = function () {
       name: "Set Trigger Source",
       options: [
         {
-          type: "textinput",
+          type: "number",
           id: "id_bank",
           label: "Bank:",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          default: 1,
+          min: 1,
+          max: this.model.banks,
         },
         {
           type: "dropdown",
@@ -310,13 +288,9 @@ exports.updateActions = function () {
         },
       ],
       callback: async (event) => {
-        let bank = this.clamp(
-          parseInt(event.options.id_bank),
-          1,
-          this.model.banks
-        );
+        let bank = event.options.id_bank;
         this.sendBlueBolt(
-          `!SET_TRIGGER ${bank} ${event.options.id_trigger_source}`
+          `!SET_TRIGGER ${bank} ${event.options.id_trigger_source}`,
         );
       },
     };
@@ -324,27 +298,25 @@ exports.updateActions = function () {
       name: "Set Reboot Delay",
       options: [
         {
-          type: "textinput",
+          type: "number",
           id: "id_delay_1",
           label: "Button 1 Delay",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          default: 1,
+          min: 1,
+          max: 255,
         },
         {
-          type: "textinput",
+          type: "number",
           id: "id_delay_2",
           label: "Button 2 Delay",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          default: 1,
+          min: 1,
+          max: 255,
         },
       ],
       callback: async (event) => {
-        let delay1 = this.clamp(parseInt(event.options.id_delay_1), 1, 255);
-        let delay2 = this.clamp(parseInt(event.options.id_delay_2), 1, 255);
+        let delay1 = event.options.id_delay_1;
+        let delay2 = event.options.id_delay_2;
         this.sendBlueBolt(`!SET_REBOOT_DELAY ${delay1} ${delay2}`);
       },
     };
@@ -352,41 +324,34 @@ exports.updateActions = function () {
       name: "Set Delay",
       options: [
         {
-          type: "textinput",
+          type: "number",
           id: "id_bank",
           label: "Bank:",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          default: 1,
+          min: 1,
+          max: this.model.banks,
         },
         {
-          type: "textinput",
+          type: "number",
           id: "id_delay_on",
           label: "On Delay",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          default: 1,
+          min: 1,
+          max: 255,
         },
         {
-          type: "textinput",
+          type: "number",
           id: "id_delay_off",
           label: "Off Delay",
-          default: "1",
-          regex: Regex.NUMBER,
-          required: true,
-          useVariables: true,
+          default: 1,
+          min: 1,
+          max: 255,
         },
       ],
       callback: async (event) => {
-        let bank = this.clamp(
-          parseInt(event.options.id_bank),
-          1,
-          this.model.banks
-        );
-        let delayOn = this.clamp(parseInt(event.options.id_delay_on), 1, 255);
-        let delayOff = this.clamp(parseInt(event.options.id_delay_off), 1, 255);
+        let bank = event.options.id_bank;
+        let delayOn = event.options.id_delay_on;
+        let delayOff = event.options.id_delay_off;
         this.sendBlueBolt(`!SET_DELAY ${bank} ${delayOn} ${delayOff}`);
       },
     };

@@ -1,7 +1,6 @@
 const {
   InstanceBase,
   Regex,
-  runEntrypoint,
   UDPHelper,
   TelnetHelper,
   InstanceStatus,
@@ -10,10 +9,11 @@ const { parseString } = require("xml2js");
 const actions = require("./actions");
 const variables = require("./variables");
 const feedbacks = require("./feedbacks");
+const presets = require("./presets");
 const models = require("./models.json");
 const upgradeScripts = require("./upgrades");
 
-class BlueBoltInstance extends InstanceBase {
+module.exports = class BlueBoltInstance extends InstanceBase {
   constructor(internal) {
     super(internal);
 
@@ -21,6 +21,7 @@ class BlueBoltInstance extends InstanceBase {
       ...actions,
       ...variables,
       ...feedbacks,
+      ...presets,
     });
   }
 
@@ -69,7 +70,7 @@ class BlueBoltInstance extends InstanceBase {
         if (this.config.pollingEnable) {
           this.pollTimer = setInterval(
             this.poll.bind(this),
-            this.config.pollingInterval
+            this.config.pollingInterval,
           );
         }
       } else if (this.model.protocol == "telnet") {
@@ -109,6 +110,7 @@ class BlueBoltInstance extends InstanceBase {
     this.updateActions();
     this.updateVariables();
     this.updateFeedbacks();
+    this.updatePresets();
   }
 
   // When module gets deleted
@@ -275,7 +277,7 @@ class BlueBoltInstance extends InstanceBase {
         this.varStates.trigger = data.device.status[0].trigger[0];
       }
       this.setVariableValues(this.varStates);
-      this.checkFeedbacks();
+      this.checkAllFeedbacks();
     }
   }
 
@@ -292,5 +294,6 @@ class BlueBoltInstance extends InstanceBase {
     }
     this.log("debug", "Sent: " + cmd + " over " + this.model.protocol);
   }
-}
-runEntrypoint(BlueBoltInstance, upgradeScripts);
+};
+
+module.exports.UpgradeScripts = upgradeScripts;
