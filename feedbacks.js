@@ -29,7 +29,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "On" },
                 { id: "0", label: "Off" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -57,7 +57,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "True" },
                 { id: "0", label: "False" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -80,7 +80,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "OK" },
                 { id: "0", label: "No Protection" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -103,7 +103,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "relay is on, AC power available" },
                 { id: "0", label: "relay is off, AC power not available" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -126,7 +126,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "OK" },
                 { id: "0", label: "No Response" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -149,7 +149,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "Overvoltage condition detected" },
                 { id: "0", label: "No overvoltage condition detected" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -172,7 +172,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "Uvervoltage condition detected" },
                 { id: "0", label: "No Undervoltage condition detected" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -195,7 +195,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "Power is normal" },
                 { id: "0", label: "Power fault; over or undervoltage" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -218,7 +218,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "Sequence in progress" },
                 { id: "0", label: "No sequence in progress" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -243,7 +243,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "ON Sequence in progress" },
                 { id: "0", label: "No sequence in progress" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -268,7 +268,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "Fault Recovery" },
                 { id: "0", label: "Normal" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
@@ -291,7 +291,7 @@ exports.updateFeedbacks = function () {
                 { id: "1", label: "Fault" },
                 { id: "0", label: "No fault" },
               ],
-              default: 1,
+              default: "1",
             },
           ],
           callback: (feedback) => {
