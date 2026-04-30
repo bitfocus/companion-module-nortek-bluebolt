@@ -14,13 +14,12 @@ exports.updateFeedbacks = function () {
           },
           options: [
             {
-              type: "textinput",
+              type: "number",
               id: "bank",
               label: "Bank",
-              default: "1",
-              regex: Regex.NUMBER,
-              required: true,
-              useVariables: true,
+              default: 1,
+              min: 1,
+              max: this.model.banks,
             },
             {
               type: "dropdown",
@@ -34,13 +33,9 @@ exports.updateFeedbacks = function () {
             },
           ],
           callback: (feedback) => {
-            let bank = this.clamp(
-              parseInt(feedback.options.bank),
-              1,
-              this.model.banks
-            );
             return (
-              this.varStates[`bank${bank}`] == Number(feedback.options.option)
+              this.varStates[`bank${feedback.options.bank}`] ==
+              Number(feedback.options.option)
             );
           },
         };
