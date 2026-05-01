@@ -4,6 +4,10 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 Controls BlueBolt Compatible sequencers from Furman and Panamax
 
+**V2.4.0**
+
+- Support for companion module API v2
+
 **V2.3.0**
 
 - Add variable support
