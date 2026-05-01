@@ -19,7 +19,7 @@
   "runtime": {
     "type": "node22",
     "api": "nodejs-ipc",
-    "apiVersion": "2.0.0",
+    "apiVersion": "0.0.0",
     "entrypoint": "../index.js"
   },
   "manufacturer": "Nortek",
